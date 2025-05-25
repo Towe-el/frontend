@@ -1,139 +1,167 @@
-import { Draggable } from 'gsap/all';
-import { closestPointOnPath, calculateRotationDiff } from './calculatePath';
+/**
+ * Path calculation utilities for circular motion path (Framer Motion version)
+ */
 
 /**
- * Makes cards draggable with circular motion constraints
+ * Finds the closest point on a path to given coordinates using binary search
  * @param {SVGPathElement} path - The SVG path element
- * @param {HTMLElement[]} cards - Array of card elements
- * @param {Object} wheelOffsetRef - Ref object containing the current wheel offset
- * @param {Function} updateCallback - Callback function to update all card positions
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @returns {number} - Length along the path of the closest point
  */
-export const makeCardsDraggable = (path, cards, wheelOffsetRef, updateCallback) => {
-  if (!path || !cards.length) return;
+export const closestPointOnPath = (path, x, y) => {
+  let closestDistance = Infinity;
+  let closestLength = 0;
+  const pathLength = path.getTotalLength();
   
-  const totalLength = path.getTotalLength();
-  const draggableInstances = [];
+  // Use binary search for more efficient and accurate point detection
+  // First pass with coarse sampling
+  const coarseSamples = 50;
+  let coarseStep = pathLength / coarseSamples;
   
-  cards.forEach((card, cardIndex) => {
-    if (!card) return;
+  for(let i = 0; i <= coarseSamples; i++) {
+    const length = i * coarseStep;
+    const point = path.getPointAtLength(length);
+    const dx = x - point.x;
+    const dy = y - point.y;
+    const distance = dx * dx + dy * dy;
     
-    // Store the original position of each card relative to the wheel
-    const originalCardPosition = cardIndex / cards.length;
-    
-    // Create a reference to track this card's last position during drag
-    const cardDragInfo = { 
-      lastProgress: originalCardPosition,
-      isDragging: false,
-      dragStartTime: 0,
-      dragDistance: 0
-    };
-    
-    const draggableInstance = Draggable.create(card, {
-      type: "x,y",
-      onDragStart: function() {
-        // Mark as dragging and record start time
-        cardDragInfo.isDragging = true;
-        cardDragInfo.dragStartTime = Date.now();
-        cardDragInfo.dragDistance = 0;
-        
-        // Set dragging attribute to prevent click events
-        card.setAttribute('data-dragging', 'true');
-        card.classList.add('dragging');
-        
-        // Save current progress at drag start
-        cardDragInfo.lastProgress = (originalCardPosition + wheelOffsetRef.current) % 1;
-      },
-      onDrag: function() {
-        // Track total drag distance
-        cardDragInfo.dragDistance += Math.abs(this.deltaX) + Math.abs(this.deltaY);
-        
-        // Get the dragged card's position
-        const box = card.getBoundingClientRect();
-        const svgBox = path.getBoundingClientRect();
-        const x = box.left + box.width/2 - svgBox.left;
-        const y = box.top + box.height/2 - svgBox.top;
-        
-        // Find closest point on path
-        const closestLength = closestPointOnPath(path, x, y);
-        const newProgress = closestLength / totalLength;
-        
-        // Calculate how much this specific card has moved
-        const rotationDiff = calculateRotationDiff(newProgress, cardDragInfo.lastProgress);
-        
-        // Update wheel offset
-        wheelOffsetRef.current = (wheelOffsetRef.current + rotationDiff + 1) % 1;
-        
-        // Update this card's last position
-        cardDragInfo.lastProgress = newProgress;
-        
-        // Update all cards with the new wheel position
-        updateCallback();
-      },
-      onDragEnd: function() {
-        const dragDuration = Date.now() - cardDragInfo.dragStartTime;
-        const isDragGesture = cardDragInfo.dragDistance > 5 || dragDuration > 150;
-        
-        // Reset dragging state after a brief delay
-        setTimeout(() => {
-          cardDragInfo.isDragging = false;
-          card.removeAttribute('data-dragging');
-          card.classList.remove('dragging');
-        }, isDragGesture ? 100 : 0);
-      },
-      // Configure drag behavior
-      inertia: false, // Disable inertia for more precise control
-      bounds: "body", // Keep within viewport
-      edgeResistance: 0.5
-    });
-
-    // Store the draggable instance for cleanup
-    if (draggableInstance && draggableInstance[0]) {
-      card._draggable = draggableInstance[0];
-      card._dragInfo = cardDragInfo;
-      draggableInstances.push(draggableInstance[0]);
+    if(distance < closestDistance) {
+      closestDistance = distance;
+      closestLength = length;
     }
-  });
+  }
   
-  return draggableInstances;
+  // Second pass with finer sampling around the closest point found
+  const range = coarseStep;
+  const start = Math.max(0, closestLength - range/2);
+  const end = Math.min(pathLength, closestLength + range/2);
+  const fineSamples = 30;
+  const fineStep = (end - start) / fineSamples;
+  
+  closestDistance = Infinity; // Reset for second pass
+  
+  for(let i = 0; i <= fineSamples; i++) {
+    const length = start + i * fineStep;
+    const point = path.getPointAtLength(length);
+    const dx = x - point.x;
+    const dy = y - point.y;
+    const distance = dx * dx + dy * dy;
+    
+    if(distance < closestDistance) {
+      closestDistance = distance;
+      closestLength = length;
+    }
+  }
+  
+  return closestLength;
 };
 
 /**
- * Gets the current position of a dragged element relative to the SVG container
- * @param {HTMLElement} element - The dragged element
- * @param {SVGPathElement} path - The SVG path element (for container reference)
- * @returns {Object} - Object containing x and y coordinates
+ * Calculates the normalized rotation difference between two progress values on a circle
+ * Handles crossing the 0/1 boundary (wrapping around the circle)
+ * @param {number} newProgress - New progress value (0-1)
+ * @param {number} lastProgress - Previous progress value (0-1)
+ * @returns {number} - Normalized rotation difference (-0.5 to 0.5)
  */
-export const getDraggedElementPosition = (element, path) => {
-  const box = element.getBoundingClientRect();
-  const svgBox = path.getBoundingClientRect();
+export const calculateRotationDiff = (newProgress, lastProgress) => {
+  let rotationDiff = newProgress - lastProgress;
+  
+  // Handle crossing the 0/1 boundary (wrapping around the circle)
+  if (rotationDiff > 0.5) rotationDiff -= 1;
+  if (rotationDiff < -0.5) rotationDiff += 1;
+  
+  return rotationDiff;
+};
+
+/**
+ * Initialize card positions on the circular path
+ * @param {SVGPathElement} path - The SVG path element
+ * @param {Array} cards - Array of card elements
+ * @param {number} wheelOffset - Current wheel rotation offset (0-1)
+ */
+export const initializeCardPositions = (path, cards, wheelOffset = 0) => {
+  if (!path || !cards.length) return;
+  
+  const pathLength = path.getTotalLength();
+  
+  cards.forEach((card, index) => {
+    if (!card) return;
+    
+    // Calculate position along path (evenly spaced)
+    const progress = (index / cards.length + wheelOffset) % 1;
+    const length = progress * pathLength;
+    const point = path.getPointAtLength(length);
+    
+    // Set initial position
+    card.style.left = `${point.x}px`;
+    card.style.top = `${point.y}px`;
+  });
+};
+
+/**
+ * Update all card positions based on current wheel offset
+ * @param {SVGPathElement} path - The SVG path element
+ * @param {Array} cards - Array of card elements
+ * @param {number} wheelOffset - Current wheel rotation offset (0-1)
+ */
+export const updateAllCardPositions = (path, cards, wheelOffset) => {
+  if (!path || !cards.length) return;
+  
+  const pathLength = path.getTotalLength();
+  
+  cards.forEach((card, index) => {
+    if (!card) return;
+    
+    // Calculate new position along path
+    const progress = (index / cards.length + wheelOffset) % 1;
+    const length = progress * pathLength;
+    const point = path.getPointAtLength(length);
+    
+    // Update position
+    card.style.left = `${point.x}px`;
+    card.style.top = `${point.y}px`;
+  });
+};
+
+/**
+ * Get position data for a card at a specific index and wheel offset
+ * @param {SVGPathElement} path - The SVG path element
+ * @param {number} index - Card index
+ * @param {number} totalCards - Total number of cards
+ * @param {number} wheelOffset - Current wheel rotation offset (0-1)
+ * @returns {Object} - Object with x, y coordinates and progress
+ */
+export const getCardPositionData = (path, index, totalCards, wheelOffset = 0) => {
+  if (!path) return { x: 0, y: 0, progress: 0 };
+  
+  const progress = (index / totalCards + wheelOffset) % 1;
+  const length = progress * path.getTotalLength();
+  const point = path.getPointAtLength(length);
   
   return {
-    x: box.left + box.width/2 - svgBox.left,
-    y: box.top + box.height/2 - svgBox.top
+    x: point.x,
+    y: point.y,
+    progress
   };
 };
 
 /**
- * Cleanup function to destroy all draggable instances
- * @param {HTMLElement[]} cards - Array of card elements
+ * Create smooth rotation animation values for wheel offset
+ * @param {number} currentOffset - Current wheel offset (0-1)
+ * @param {number} rotations - Number of full rotations to add
+ * @param {number} duration - Duration in seconds
+ * @returns {Object} - Animation config for Framer Motion
  */
-export const cleanupDraggable = (cards) => {
-  cards.forEach(card => {
-    if (card && card._draggable) {
-      card._draggable.kill();
-      delete card._draggable;
-      delete card._dragInfo;
-      card.removeAttribute('data-dragging');
-      card.classList.remove('dragging');
+export const createWheelRotationAnimation = (currentOffset, rotations = 5, duration = 5) => {
+  const targetOffset = (currentOffset + rotations) % 1;
+  
+  return {
+    wheelOffset: targetOffset,
+    transition: {
+      duration,
+      ease: "easeOut",
+      type: "tween"
     }
-  });
-};
-
-/**
- * Check if a card is currently being dragged
- * @param {HTMLElement} card - The card element to check
- * @returns {boolean} - True if the card is being dragged
- */
-export const isCardDragging = (card) => {
-  return card && card._dragInfo && card._dragInfo.isDragging;
+  };
 };

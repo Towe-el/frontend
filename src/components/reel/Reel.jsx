@@ -1,76 +1,42 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
 import EmotionCard from "../emotion-card/EmotionCard";
 import CardDetailModal from '../emotion-card/CardDetailModal';
 import { simulatedEmotionData } from '../../type/emotionData';
-import { 
-  registerGSAPPlugins, 
-  initializeCardPositions, 
-  updateAllCardPositions, 
-  createRotationAnimation 
-} from '../../utils/gsapAnima';
-import { makeCardsDraggable, cleanupDraggable, isCardDragging } from '../../utils/draggable';
 
 function Reel() {
-  const cardsRef = useRef([]);
-  const pathRef = useRef();
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const animationRef = useRef(null);
-  const wheelOffsetRef = useRef(0); // Store the wheel's current rotation offset
-  const draggableInstancesRef = useRef([]);
-
-  useEffect(() => {
-    registerGSAPPlugins();
-
-    // Position cards initially without animation
-    handleInitializeCardPositions();
-    handleMakeCardsDraggable();
-
-    // Cleanup function
-    return () => {
-      if (animationRef.current) {
-        animationRef.current.kill();
-      }
-      // Clean up draggable instances
-      cleanupDraggable(cardsRef.current);
+  const [highlightedCards, setHighlightedCards] = useState([]);
+  
+  // Motion values for wheel rotation
+  const wheelRotation = useMotionValue(0);
+  const controls = useAnimation();
+  
+  // SVG path reference for positioning calculations
+  const pathRef = useRef();
+  const cardsRef = useRef([]);
+  
+  // Calculate card positions around the circle
+  const getCardPosition = useCallback((index, totalCards, rotation = 0) => {
+    const radius = 300; // Match your SVG circle radius
+    const centerX = 400; // SVG viewBox center
+    const centerY = 400;
+    const angleStep = (2 * Math.PI) / totalCards;
+    const angle = (index * angleStep) + (rotation * Math.PI / 180);
+    
+    return {
+      x: centerX + radius * Math.cos(angle - Math.PI / 2),
+      y: centerY + radius * Math.sin(angle - Math.PI / 2),
     };
   }, []);
-  
-  // Wrapper function to handle card initialization
-  const handleInitializeCardPositions = () => {
-    initializeCardPositions(pathRef.current, cardsRef.current, wheelOffsetRef.current);
-  };
-  
-  // Wrapper function to handle making cards draggable
-  const handleMakeCardsDraggable = () => {
-    const instances = makeCardsDraggable(
-      pathRef.current, 
-      cardsRef.current, 
-      wheelOffsetRef, 
-      handleUpdateAllCardPositions
-    );
-    draggableInstancesRef.current = instances || [];
-  };
-  
-  // Wrapper function to handle updating all card positions
-  const handleUpdateAllCardPositions = () => {
-    updateAllCardPositions(pathRef.current, cardsRef.current, wheelOffsetRef.current);
-  };
 
-  // Handle card click to open modal - one click
-  const handleCardClick = (emotionData, event, cardElement) => {
-    // Check if the card is currently being dragged
-    if (isCardDragging(cardElement)) {
-      return; // Don't open modal if dragging
-    }
+  // Handle card click to open modal
+  const handleCardClick = (emotionData, event) => {
+    // Prevent opening modal during animation
+    if (isAnimating) return;
     
-    // Check if this element has the dragging attribute (safety check)
-    if (cardElement && cardElement.getAttribute('data-dragging') === 'true') {
-      return; // Don't open modal if marked as dragging
-    }
-    
-    // Prevent event bubbling
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -86,68 +52,97 @@ function Reel() {
     setSelectedEmotion(null);
   };
 
-  // Function to start/stop animation
-  const toggleAnimation = () => {
-    const path = pathRef.current;
-    const cards = cardsRef.current;
+  // Spin sequence function
+  const startSpinSequence = async () => {
+    if (isAnimating) return;
     
-    if (!path || !cards.length) return;
+    setIsAnimating(true);
+    setHighlightedCards([]); // Clear any previous highlights
     
-    if (isAnimating) {
-      // Stop animation
-      if (animationRef.current) {
-        // Get current position from the timeline
-        const currentPos = animationRef.current.progress();
-        animationRef.current.kill();
-        animationRef.current = null;
-        
-        // Ensure the wheel stays at the current position after stopping
-        handleUpdateAllCardPositions();
+    // Spin animation for 5 seconds
+    await controls.start({
+      rotate: wheelRotation.get() + 1800, // 5 full rotations (360 * 5)
+      transition: {
+        duration: 5,
+        ease: "easeOut"
       }
-      
-      setIsAnimating(false);
-    } else {
-      // Start animation - animate all cards together to maintain spacing
-      const timeline = createRotationAnimation(
-        wheelOffsetRef, 
-        handleUpdateAllCardPositions, 
-        40
-      );
-      
-      animationRef.current = timeline;
-      setIsAnimating(true);
+    });
+    
+    // Update wheel rotation value
+    wheelRotation.set(wheelRotation.get() + 1800);
+    
+    // Select 2 random cards to highlight
+    const randomIndices = [];
+    while (randomIndices.length < 2) {
+      const randomIndex = Math.floor(Math.random() * simulatedEmotionData.length);
+      if (!randomIndices.includes(randomIndex)) {
+        randomIndices.push(randomIndex);
+      }
     }
+    
+    setHighlightedCards(randomIndices);
+    setIsAnimating(false);
+  };
+
+  // Reset highlighted cards
+  const resetHighlights = () => {
+    setHighlightedCards([]);
   };
 
   return (
     <>
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4">
+      {/* Add CSS for glow effects */}
+      <style>{`
+        .card-glow {
+          filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+        }
+        @keyframes pulse-glow {
+          0%, 100% { 
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+          }
+          50% { 
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) drop-shadow(0 0 40px rgba(255, 215, 0, 0.6));
+          }
+        }
+        .card-pulse {
+          animation: pulse-glow 2s infinite;
+        }
+      `}</style>
+      
+      {/* Main content - hide when modal is open */}
+      <div className={`min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4 ${isModalOpen ? 'hidden' : 'block'}`}>
 
-        {/* Animation control button */}
+        {/* Animation control buttons */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <button
-            onClick={toggleAnimation}
-            className={`mb-8 px-6 py-3 text-base font-light rounded-lg transition-colors duration-200 ${
-              isAnimating 
-                ? "bg-red-500 hover:bg-red-600 text-white" 
-                : "bg-green-500 hover:bg-green-600 text-white"
-            }`}
-          >
-            {isAnimating ? "Stop Animation" : "Start Animation"}
-          </button>
+          <div className="flex gap-4 mb-8">
+            <button
+              onClick={startSpinSequence}
+              disabled={isAnimating}
+              className={`px-6 py-3 text-base font-light rounded-lg transition-colors duration-200 ${
+                isAnimating 
+                  ? "bg-gray-400 text-gray-600 cursor-not-allowed" 
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              }`}
+            >
+              {isAnimating ? "Spinning..." : "Spin & Select"}
+            </button>
+            
+            {highlightedCards.length > 0 && (
+              <button
+                onClick={resetHighlights}
+                className="px-6 py-3 text-base font-light rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition-colors duration-200"
+              >
+                Reset Selection
+              </button>
+            )}
+          </div>
         </div>
 
         {/* SVG Container */}
         <div className="relative w-full max-w-2xl aspect-square flex items-center justify-center">
-          <div 
-            className="path-container relative w-full h-full"
-            style={{ overflow: 'visible' }}
-          >
-            <svg
-              viewBox="0 0 800 800"
-              className="absolute inset-0 w-full h-full"
-            >
-              {/* Larger circle path centered in viewbox */}
+          <div className="path-container relative w-full h-full" style={{ overflow: 'visible' }}>
+            <svg viewBox="0 0 800 800" className="absolute inset-0 w-full h-full">
+              {/* Circle path for reference */}
               <path
                 ref={pathRef}
                 d="M400,100 A300,300 0 0,1 400,700 A300,300 0 0,1 400,100"
@@ -157,38 +152,54 @@ function Reel() {
               />
             </svg>
 
-            {/* Render Emotion Cards */}
-            <div className="cards-container absolute inset-0">
-              {simulatedEmotionData.map((data, index) => (
-                <div
-                  key={index}
-                  ref={el => (cardsRef.current[index] = el)}
-                  className="emotion-card absolute"
-                  style={{
-                    transform: "translate(-50%, -50%) scale(0.9)",
-                    transformOrigin: "center center",
-                    fontSize: "1rem",
-                    pointerEvents: "auto" // Ensure pointer events are enabled
-                  }}
-                  onClick={(e) => {
-                    // Add a small delay to ensure drag state is properly set
-                    setTimeout(() => {
-                      handleCardClick(data, e, cardsRef.current[index]);
-                    }, 10);
-                  }}
-                >
-                  <EmotionCard
-                    emotion={data.emotion}
-                    score={data.score}
-                  />
-                </div>
-              ))}
-            </div>
+            {/* Animated Cards Container */}
+            <motion.div 
+              className="cards-container absolute inset-0"
+              animate={controls}
+              style={{ rotate: wheelRotation }}
+            >
+              {simulatedEmotionData.map((data, index) => {
+                const position = getCardPosition(index, simulatedEmotionData.length);
+                const isHighlighted = highlightedCards.includes(index);
+                
+                return (
+                  <motion.div
+                    key={index}
+                    ref={el => (cardsRef.current[index] = el)}
+                    className={`emotion-card absolute ${isHighlighted ? 'card-pulse' : ''}`}
+                    style={{
+                      left: position.x,
+                      top: position.y,
+                      transform: "translate(-50%, -50%)",
+                      transformOrigin: "center center",
+                      fontSize: "1rem",
+                      pointerEvents: "auto",
+                      zIndex: isHighlighted ? 100 : 1
+                    }}
+                    animate={{
+                      scale: isHighlighted ? 1.2 : 0.9,
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      ease: "easeOut"
+                    }}
+                    onClick={(e) => handleCardClick(data, e)}
+                    whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
+                    whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
+                  >
+                    <EmotionCard
+                      emotion={data.emotion}
+                      score={data.score}
+                    />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Card Modal - Outside the main container */}
+      {/* Card Modal/Page */}
       <CardDetailModal
         isOpen={isModalOpen}
         onClose={closeModal}
