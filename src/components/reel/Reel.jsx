@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
 import EmotionCard from "../emotion-card/EmotionCard";
 import CardDetailModal from '../emotion-card/CardDetailModal';
@@ -16,7 +16,6 @@ function Reel() {
   const wheelRotation = useMotionValue(0);
   const controls = useAnimation();
   const containerRef = useRef();
-  const cardsRef = useRef([]);
   const lastAngle = useRef(null);
 
   const getAngleFromCenter = (x, y, centerX, centerY) => {
@@ -58,9 +57,10 @@ function Reel() {
         randomIndices.push(randomIndex);
       }
     }
+
     setHighlightedCards(randomIndices);
     setIsAnimating(false);
-    setIsDialogueOpen(true); // show the AI dialogue once the spin is done.
+    setIsDialogueOpen(true); // Show dialogue after spin
   };
 
   const resetHighlights = () => {
@@ -90,36 +90,40 @@ function Reel() {
       `}</style>
 
       <div className={`min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4 ${isModalOpen ? 'hidden' : 'block'}`}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={startSpinSequence}
-              disabled={isAnimating}
-              className={`px-6 py-3 text-base font-light rounded-lg transition-colors duration-200 ${
-                isAnimating ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 text-white"
-              }`}
-            >
-              {isAnimating ? "Spinning..." : "Spin & Start"}
-            </button>
-            {highlightedCards.length > 0 && (
+        {!isDialogueOpen && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <div className="flex gap-4 mb-8">
               <button
-                onClick={resetHighlights}
-                className="px-6 py-3 text-base font-light rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition-colors duration-200"
+                onClick={startSpinSequence}
+                disabled={isAnimating}
+                className={`px-6 py-3 text-base font-light rounded-lg transition-colors duration-200 ${
+                  isAnimating ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 text-white"
+                }`}
               >
-                Reset Selection
+                {isAnimating ? "Spinning..." : "Spin & Start"}
               </button>
-            )}
+              {highlightedCards.length > 0 && (
+                <button
+                  onClick={resetHighlights}
+                  className="px-6 py-3 text-base font-light rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition-colors duration-200"
+                >
+                  Reset Selection
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="relative w-full h-screen flex items-center justify-center">
           <svg viewBox="0 0 800 800" className="absolute w-[800px] h-[800px] z-0 pointer-events-none">
             <circle cx="400" cy="400" r="300" fill="none" stroke="rgba(0,0,255,0.2)" strokeWidth="2" />
           </svg>
 
-          <div
+          <motion.div
             ref={containerRef}
-            className="absolute w-[800px] h-[800px]"
+            className="absolute w-[800px] h-[800px] z-10 cursor-grab"
+            animate={controls}
+            style={{ rotate: wheelRotation }}
             onPointerDown={(e) => {
               e.target.setPointerCapture(e.pointerId);
               setIsDragging(true);
@@ -177,7 +181,7 @@ function Reel() {
                 </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -186,9 +190,10 @@ function Reel() {
         onClose={closeModal}
         emotionData={selectedEmotion}
       />
+
       <DialogueModal 
-      isOpen={isDialogueOpen}
-      onClose={()=>setIsDialogueOpen(false)}
+        isOpen={isDialogueOpen}
+        onClose={() => setIsDialogueOpen(false)}
       />
     </>
   );

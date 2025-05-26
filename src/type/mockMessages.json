@@ -1,0 +1,34 @@
+[
+  {
+    "sender": "user",
+    "text": "Hi there, I'm feeling a bit anxious today."
+  },
+  {
+    "sender": "ai",
+    "text": "I'm here to help. Can you tell me more about what's making you feel anxious?"
+  },
+  {
+    "sender": "user",
+    "text": "I have a presentation tomorrow, and I'm worried about messing it up."
+  },
+  {
+    "sender": "ai",
+    "text": "That's completely understandable. Presentations can be stressful. Have you practiced it yet?"
+  },
+  {
+    "sender": "user",
+    "text": "Yes, a few times, but I still feel nervous."
+  },
+  {
+    "sender": "ai",
+    "text": "You're doing great by preparing. Try to visualize a positive outcome—it can help calm your nerves."
+  },
+  {
+    "sender": "user",
+    "text": "Thanks, I’ll give that a try."
+  },
+  {
+    "sender": "ai",
+    "text": "You're welcome! Remember, confidence grows with action. You've got this."
+  }
+]
