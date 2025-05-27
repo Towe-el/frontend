@@ -5,13 +5,13 @@ import CardDetailModal from '../emotion-card/CardDetailModal';
 import DialogueModal from '../dialogue/DialogueModal';
 import { simulatedEmotionData } from '../../type/emotionData';
 
-function Reel() {
+function Reel({ showDialogue = false }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [highlightedCards, setHighlightedCards] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isDialogueOpen, setIsDialogueOpen] = useState(false);
+  const [isDialogueOpen, setIsDialogueOpen] = useState(showDialogue);
 
   const wheelRotation = useMotionValue(0);
   const controls = useAnimation();
@@ -59,8 +59,12 @@ function Reel() {
     }
 
     setHighlightedCards(randomIndices);
+    
+    // Add a 3-second delay before showing the dialogue
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
     setIsAnimating(false);
-    setIsDialogueOpen(true); // Show dialogue after spin
+    setIsDialogueOpen(true);
   };
 
   const resetHighlights = () => {
@@ -90,98 +94,102 @@ function Reel() {
       `}</style>
 
       <div className={`min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4 ${isModalOpen ? 'hidden' : 'block'}`}>
-        {!isDialogueOpen && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <div className="flex gap-4 mb-8">
-              <button
-                onClick={startSpinSequence}
-                disabled={isAnimating}
-                className={`px-6 py-3 text-base font-light rounded-lg transition-colors duration-200 ${
-                  isAnimating ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                {isAnimating ? "Spinning..." : "Spin & Start"}
-              </button>
-              {highlightedCards.length > 0 && (
+        <div className="relative w-full h-screen">
+          {/* Controls Layer */}
+          <div className="absolute top-0 left-0 right-0 z-50 flex justify-center pt-8">
+            {!isDialogueOpen && (
+              <div className="flex gap-4">
                 <button
-                  onClick={resetHighlights}
-                  className="px-6 py-3 text-base font-light rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition-colors duration-200"
+                  onClick={startSpinSequence}
+                  disabled={isAnimating}
+                  className={`px-6 py-3 text-base font-light rounded-lg transition-colors duration-200 ${
+                    isAnimating ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 text-white"
+                  }`}
                 >
-                  Reset Selection
+                  {isAnimating ? "Spinning..." : "Spin & Start"}
                 </button>
-              )}
-            </div>
+                {highlightedCards.length > 0 && (
+                  <button
+                    onClick={resetHighlights}
+                    className="px-6 py-3 text-base font-light rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition-colors duration-200"
+                  >
+                    Reset Selection
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        )}
 
-        <div className="relative w-full h-screen flex items-center justify-center">
-          <svg viewBox="0 0 800 800" className="absolute w-[800px] h-[800px] z-0 pointer-events-none">
-            <circle cx="400" cy="400" r="300" fill="none" stroke="rgba(0,0,255,0.2)" strokeWidth="2" />
-          </svg>
+          {/* Wheel Layer */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg viewBox="0 0 800 800" className="absolute w-[800px] h-[800px] z-0 pointer-events-none">
+              <circle cx="400" cy="400" r="300" fill="none" stroke="rgba(0,0,255,0.2)" strokeWidth="2" />
+            </svg>
 
-          <motion.div
-            ref={containerRef}
-            className="absolute w-[800px] h-[800px] z-10 cursor-grab"
-            animate={controls}
-            style={{ rotate: wheelRotation }}
-            onPointerDown={(e) => {
-              e.target.setPointerCapture(e.pointerId);
-              setIsDragging(true);
-              const bounds = containerRef.current.getBoundingClientRect();
-              const cx = bounds.left + bounds.width / 2;
-              const cy = bounds.top + bounds.height / 2;
-              lastAngle.current = getAngleFromCenter(e.clientX, e.clientY, cx, cy);
-            }}
-            onPointerMove={(e) => {
-              if (!isDragging) return;
-              const bounds = containerRef.current.getBoundingClientRect();
-              const cx = bounds.left + bounds.width / 2;
-              const cy = bounds.top + bounds.height / 2;
-              const currentAngle = getAngleFromCenter(e.clientX, e.clientY, cx, cy);
-              const delta = currentAngle - lastAngle.current;
-              wheelRotation.set(wheelRotation.get() + delta);
-              lastAngle.current = currentAngle;
-            }}
-            onPointerUp={() => {
-              setIsDragging(false);
-              lastAngle.current = null;
-            }}
-          >
-            {simulatedEmotionData.map((data, index) => {
-              const anglePerCard = 360 / totalCards;
-              const baseAngle = anglePerCard * index;
-              const dynamicAngle = useTransform(wheelRotation, r => r + baseAngle);
-              const x = useTransform(dynamicAngle, a => 400 + radius * Math.cos((a - 90) * Math.PI / 180));
-              const y = useTransform(dynamicAngle, a => 400 + radius * Math.sin((a - 90) * Math.PI / 180));
-              const isHighlighted = highlightedCards.includes(index);
+            <motion.div
+              ref={containerRef}
+              className="absolute w-[800px] h-[800px] z-10 cursor-grab"
+              animate={controls}
+              style={{ rotate: wheelRotation }}
+              onPointerDown={(e) => {
+                e.target.setPointerCapture(e.pointerId);
+                setIsDragging(true);
+                const bounds = containerRef.current.getBoundingClientRect();
+                const cx = bounds.left + bounds.width / 2;
+                const cy = bounds.top + bounds.height / 2;
+                lastAngle.current = getAngleFromCenter(e.clientX, e.clientY, cx, cy);
+              }}
+              onPointerMove={(e) => {
+                if (!isDragging) return;
+                const bounds = containerRef.current.getBoundingClientRect();
+                const cx = bounds.left + bounds.width / 2;
+                const cy = bounds.top + bounds.height / 2;
+                const currentAngle = getAngleFromCenter(e.clientX, e.clientY, cx, cy);
+                const delta = currentAngle - lastAngle.current;
+                wheelRotation.set(wheelRotation.get() + delta);
+                lastAngle.current = currentAngle;
+              }}
+              onPointerUp={() => {
+                setIsDragging(false);
+                lastAngle.current = null;
+              }}
+            >
+              {simulatedEmotionData.map((data, index) => {
+                const anglePerCard = 360 / totalCards;
+                const baseAngle = anglePerCard * index;
+                const dynamicAngle = useTransform(wheelRotation, r => r + baseAngle);
+                const x = useTransform(dynamicAngle, a => 400 + radius * Math.cos((a - 90) * Math.PI / 180));
+                const y = useTransform(dynamicAngle, a => 400 + radius * Math.sin((a - 90) * Math.PI / 180));
+                const isHighlighted = highlightedCards.includes(index);
 
-              return (
-                <motion.div
-                  key={index}
-                  className={`emotion-card absolute ${isHighlighted ? 'card-pulse' : ''}`}
-                  style={{
-                    position: 'absolute',
-                    left: x,
-                    top: y,
-                    translateX: "-50%",
-                    translateY: "-50%",
-                    rotate: useTransform(dynamicAngle, a => a),
-                    transformOrigin: "center center",
-                    fontSize: "1rem",
-                    pointerEvents: "auto",
-                    zIndex: isHighlighted ? 100 : 1,
-                  }}
-                  animate={{ scale: isHighlighted ? 1.2 : 0.9 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  onClick={(e) => handleCardClick(data, e)}
-                  whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
-                  whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
-                >
-                  <EmotionCard emotion={data.emotion} score={data.score} />
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                return (
+                  <motion.div
+                    key={index}
+                    className={`emotion-card absolute ${isHighlighted ? 'card-pulse' : ''}`}
+                    style={{
+                      position: 'absolute',
+                      left: x,
+                      top: y,
+                      translateX: "-50%",
+                      translateY: "-50%",
+                      rotate: useTransform(dynamicAngle, a => a),
+                      transformOrigin: "center center",
+                      fontSize: "1rem",
+                      pointerEvents: "auto",
+                      zIndex: isHighlighted ? 100 : 1,
+                    }}
+                    animate={{ scale: isHighlighted ? 1.2 : 0.9 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    onClick={(e) => handleCardClick(data, e)}
+                    whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
+                    whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
+                  >
+                    <EmotionCard emotion={data.emotion} score={data.score} />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
         </div>
       </div>
 
