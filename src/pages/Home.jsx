@@ -3,10 +3,12 @@ import Reel from '../components/reel/Reel'
 import Navbar from '../components/navbar/Navbar'
 import ProductIntroModal from '../components/product-intro/ProductIntroModal'
 import DialogueModal from '../components/dialogue/DialogueModal'
+import Assistant from '../components/assistant/Assistant'
 
 function Home() {
   const [showIntro, setShowIntro] = useState(true)
   const [showDialogue, setShowDialogue] = useState(false)
+  const [showAssistant, setShowAssistant] = useState(false)
 
   const handleGetStarted = () => {
     setShowIntro(false)
@@ -15,11 +17,15 @@ function Home() {
 
   const handleExplore = () => {
     setShowIntro(false)
-    setShowDialogue(false)
+    setShowAssistant(true)
   }
 
   const handleCloseDialogue = () => {
     setShowDialogue(false)
+  }
+
+  const handleOpenDialogue = () => {
+    setShowDialogue(true)
   }
 
   return (
@@ -37,6 +43,7 @@ function Home() {
         isOpen={showDialogue}
         onClose={handleCloseDialogue}
       />
+      {showAssistant && <Assistant onOpenDialogue={handleOpenDialogue} />}
     </div>
   )
 }
