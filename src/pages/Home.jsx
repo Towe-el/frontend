@@ -7,7 +7,6 @@ import DialogueModal from '../components/dialogue/DialogueModal'
 function Home() {
   const [showIntro, setShowIntro] = useState(true)
   const [showDialogue, setShowDialogue] = useState(false)
-  const [showWheel, setShowWheel] = useState(true)
 
   const handleGetStarted = () => {
     setShowIntro(false)
@@ -24,9 +23,11 @@ function Home() {
   }
 
   return (
-    <>
+    <div className="h-screen w-full overflow-hidden">
       <Navbar />
-      <Reel showDialogue={false} />
+      <div className="h-[calc(100vh-64px)] w-full">
+        <Reel showDialogue={false} />
+      </div>
       <ProductIntroModal 
         isOpen={showIntro}
         onGetStarted={handleGetStarted}
@@ -36,7 +37,7 @@ function Home() {
         isOpen={showDialogue}
         onClose={handleCloseDialogue}
       />
-    </>
+    </div>
   )
 }
 

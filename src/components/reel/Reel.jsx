@@ -91,12 +91,24 @@ function Reel({ showDialogue = false }) {
         .card-pulse {
           animation: pulse-glow 2s infinite;
         }
+
+        @media (max-width: 768px) {
+          .wheel-container {
+            transform: scale(0.7) translateY(-20%);
+          }
+          .emotion-card {
+            transform: scale(0.8);
+          }
+          .controls-container {
+            padding-top: 1rem;
+          }
+        }
       `}</style>
 
       <div className={`min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4 ${isModalOpen ? 'hidden' : 'block'}`}>
         <div className="relative w-full h-screen">
           {/* Controls Layer */}
-          <div className="absolute top-0 left-0 right-0 z-50 flex justify-center pt-8">
+          <div className="absolute top-0 left-0 right-0 z-50 flex justify-center controls-container">
             {!isDialogueOpen && (
               <div className="flex gap-4">
                 <button
@@ -121,14 +133,14 @@ function Reel({ showDialogue = false }) {
           </div>
 
           {/* Wheel Layer */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             <svg viewBox="0 0 800 800" className="absolute w-[800px] h-[800px] z-0 pointer-events-none">
               <circle cx="400" cy="400" r="300" fill="none" stroke="rgba(0,0,255,0.2)" strokeWidth="2" />
             </svg>
 
             <motion.div
               ref={containerRef}
-              className="absolute w-[800px] h-[800px] z-10 cursor-grab"
+              className="absolute w-[800px] h-[800px] z-10 cursor-grab wheel-container"
               animate={controls}
               style={{ rotate: wheelRotation }}
               onPointerDown={(e) => {

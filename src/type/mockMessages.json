@@ -1,34 +1,42 @@
 [
   {
-    "sender": "user",
-    "text": "Hi there, I'm feeling a bit anxious today."
+    "sender": "ai",
+    "text": "I understand you're feeling anxious. That's a common emotion. Would you like to talk about what's causing this feeling?"
   },
   {
     "sender": "ai",
-    "text": "I'm here to help. Can you tell me more about what's making you feel anxious?"
-  },
-  {
-    "sender": "user",
-    "text": "I have a presentation tomorrow, and I'm worried about messing it up."
+    "text": "It's completely normal to feel that way. How long have you been experiencing these feelings?"
   },
   {
     "sender": "ai",
-    "text": "That's completely understandable. Presentations can be stressful. Have you practiced it yet?"
-  },
-  {
-    "sender": "user",
-    "text": "Yes, a few times, but I still feel nervous."
+    "text": "Thank you for sharing that with me. What do you think would help you feel better in this situation?"
   },
   {
     "sender": "ai",
-    "text": "You're doing great by preparing. Try to visualize a positive outcome—it can help calm your nerves."
-  },
-  {
-    "sender": "user",
-    "text": "Thanks, I’ll give that a try."
+    "text": "I hear you. It sounds like this is really affecting you. Have you tried any coping strategies so far?"
   },
   {
     "sender": "ai",
-    "text": "You're welcome! Remember, confidence grows with action. You've got this."
+    "text": "That's a good observation. How do you usually handle similar situations?"
+  },
+  {
+    "sender": "ai",
+    "text": "I appreciate you opening up about this. Would you like to explore some techniques that might help?"
+  },
+  {
+    "sender": "ai",
+    "text": "That's a valid concern. What would success look like for you in this situation?"
+  },
+  {
+    "sender": "ai",
+    "text": "I'm here to support you. What's one small step you could take right now to help yourself?"
+  },
+  {
+    "sender": "ai",
+    "text": "That's a great insight. How do you feel about trying a different approach?"
+  },
+  {
+    "sender": "ai",
+    "text": "I understand this is challenging. What would you like to focus on next?"
   }
 ]
