@@ -21,18 +21,18 @@ const ProductIntroModal = ({ isOpen, onClose, onGetStarted, onExplore }) => {
               damping: 25,
               duration: 0.5
             }}
-            className="rounded-xl p-8 w-[90%] max-w-md flex flex-col items-center bg-white/40 shadow-lg backdrop-blur text-center"
+            className="rounded-xl p-8 w-full flex flex-col items-center bg-white/20 backdrop-blur text-center"
           >
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-2xl font-semibold mb-8 text-gray-800"
+              className="text-4xl font-semibold mb-8 text-gray-800"
             >
-              Name your Emotion with the help of AI
+              Spin the Emotion Wheel, name your Emotion with the help of AI.
             </motion.h1>
 
-            <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-row gap-8 max-w-md">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -41,7 +41,7 @@ const ProductIntroModal = ({ isOpen, onClose, onGetStarted, onExplore }) => {
               >
                 Get Started
               </motion.button>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

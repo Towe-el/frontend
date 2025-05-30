@@ -1,0 +1,139 @@
+{
+  "emotions": {
+    "joy": {
+      "primary": {
+        "title": "Primary Emotion",
+        "content": "You're experiencing a deep sense of joy and happiness. This positive emotion indicates a moment of genuine contentment and fulfillment in your life."
+      },
+      "meaning": {
+        "title": "What This Means",
+        "content": "Joy is a powerful emotion that often emerges when we feel aligned with our values and desires. It suggests you're in a positive state of mind and experiencing meaningful moments in your life."
+      },
+      "suggestions": {
+        "title": "Suggested Actions",
+        "content": [
+          "Share your joy with others - it multiplies when shared",
+          "Take time to savor and appreciate this moment",
+          "Document this feeling in a journal or through creative expression",
+          "Use this positive energy to inspire others"
+        ]
+      },
+      "understanding": {
+        "title": "Understanding Your Emotion",
+        "content": "Joy is a natural response to positive experiences and achievements. It's important to recognize that this emotion is a valuable indicator of what brings you happiness and fulfillment."
+      },
+      "moving_forward": {
+        "title": "Moving Forward",
+        "content": "While joy is wonderful, remember that all emotions are temporary. Use this moment of joy to strengthen your emotional resilience and create more opportunities for happiness in your life."
+      }
+    },
+    "sadness": {
+      "primary": {
+        "title": "Primary Emotion",
+        "content": "You're experiencing a period of sadness. This emotion, while challenging, is a natural and important part of the human experience."
+      },
+      "meaning": {
+        "title": "What This Means",
+        "content": "Sadness often emerges when we experience loss, disappointment, or unmet expectations. It's a signal that something matters to you deeply and that you're processing important feelings."
+      },
+      "suggestions": {
+        "title": "Suggested Actions",
+        "content": [
+          "Allow yourself to feel and acknowledge this emotion",
+          "Practice self-compassion and gentle self-care",
+          "Connect with supportive friends or family",
+          "Engage in activities that bring you comfort"
+        ]
+      },
+      "understanding": {
+        "title": "Understanding Your Emotion",
+        "content": "Sadness is a natural response to difficult situations. It's important to understand that this emotion serves a purpose in helping you process and heal from challenging experiences."
+      },
+      "moving_forward": {
+        "title": "Moving Forward",
+        "content": "Remember that sadness, like all emotions, is temporary. This feeling can be a catalyst for growth and deeper understanding of yourself and your needs."
+      }
+    },
+    "anger": {
+      "primary": {
+        "title": "Primary Emotion",
+        "content": "You're experiencing anger. This powerful emotion often signals that something important to you has been affected or threatened."
+      },
+      "meaning": {
+        "title": "What This Means",
+        "content": "Anger typically arises when we feel our boundaries have been crossed or when we perceive injustice. It can be a protective emotion that helps us stand up for ourselves and our values."
+      },
+      "suggestions": {
+        "title": "Suggested Actions",
+        "content": [
+          "Take deep breaths to center yourself",
+          "Identify the specific trigger of your anger",
+          "Express your feelings in a constructive way",
+          "Consider physical activity to release tension"
+        ]
+      },
+      "understanding": {
+        "title": "Understanding Your Emotion",
+        "content": "Anger is a natural response to perceived threats or injustices. It's important to recognize that this emotion can be a powerful motivator for positive change when channeled effectively."
+      },
+      "moving_forward": {
+        "title": "Moving Forward",
+        "content": "While anger can be intense, it's temporary. Use this energy to identify what matters to you and how you can address the underlying issues constructively."
+      }
+    },
+    "fear": {
+      "primary": {
+        "title": "Primary Emotion",
+        "content": "You're experiencing fear. This emotion is a natural response to perceived threats or uncertainty in your environment."
+      },
+      "meaning": {
+        "title": "What This Means",
+        "content": "Fear often emerges when we face the unknown or anticipate potential challenges. It's a protective mechanism that helps us prepare for and respond to potential threats."
+      },
+      "suggestions": {
+        "title": "Suggested Actions",
+        "content": [
+          "Practice grounding techniques to stay present",
+          "Break down the source of fear into smaller, manageable parts",
+          "Seek support from trusted friends or professionals",
+          "Use mindfulness to observe your thoughts without judgment"
+        ]
+      },
+      "understanding": {
+        "title": "Understanding Your Emotion",
+        "content": "Fear is a natural response to perceived threats. It's important to understand that this emotion serves a protective purpose and can be managed effectively."
+      },
+      "moving_forward": {
+        "title": "Moving Forward",
+        "content": "Remember that fear, while uncomfortable, is temporary. This emotion can be a valuable guide for identifying areas where you need support or preparation."
+      }
+    },
+    "surprise": {
+      "primary": {
+        "title": "Primary Emotion",
+        "content": "You're experiencing surprise. This emotion indicates an unexpected event or revelation that has caught your attention."
+      },
+      "meaning": {
+        "title": "What This Means",
+        "content": "Surprise often emerges when we encounter something unexpected or novel. It's a natural response that helps us process new information and adapt to changes."
+      },
+      "suggestions": {
+        "title": "Suggested Actions",
+        "content": [
+          "Take a moment to process the unexpected event",
+          "Reflect on how this surprise affects your current situation",
+          "Consider the potential opportunities this surprise presents",
+          "Share your reaction with someone you trust"
+        ]
+      },
+      "understanding": {
+        "title": "Understanding Your Emotion",
+        "content": "Surprise is a natural response to unexpected events. It's important to recognize that this emotion helps us stay alert and adaptable to changes in our environment."
+      },
+      "moving_forward": {
+        "title": "Moving Forward",
+        "content": "While surprise can be disorienting, it's temporary. Use this moment to assess the situation and determine your next steps with clarity."
+      }
+    }
+  }
+} 

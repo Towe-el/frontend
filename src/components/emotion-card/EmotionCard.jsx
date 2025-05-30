@@ -18,22 +18,21 @@ const EmotionCard = ({ emotion, score, isModal = false }) => {
       className={`
         ${getBackgroundColor(score)}
         ${getOpacity(score)}
-        ${isModal ? 'w-40 h-60' : 'w-25 h-38'}
+        ${isModal ? 'w-60 h-80' : 'w-25 h-38'}
         flex flex-col items-center justify-center
         rounded-lg m-2.5 shadow-lg
         transition-all duration-300
         ${!isModal ? 'cursor-pointer hover:shadow-xl hover:scale-105' : ''}
       `}
       style={{
-        width: isModal ? '160px' : '100px',
-        height: isModal ? '240px' : '150px',
+        width: isModal ? '260px' : '100px',
+        height: isModal ? '400px' : '150px',
       }}
-      onClick={isModal ? undefined : (e) => e.stopPropagation()}
     >
-      <h3 className={`${isModal ? 'text-2xl mb-3' : 'text-xl mb-2'} font-semibold text-gray-800`}>
+      <h3 className={`${isModal ? 'text-2xl mb-3' : 'text-lg m-2 w-full text-center'} font-semibold text-gray-800`}>
         {emotion}
       </h3>
-      <p className={`${isModal ? 'text-xl' : 'text-lg'} font-bold text-gray-800 m-0`}>
+      <p className={`${isModal ? 'text-xl font-bold text-gray-800 m-0' : 'invisible'} `}>
         {(score * 100).toFixed(0)}%
       </p>
     </div>

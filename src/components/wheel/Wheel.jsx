@@ -2,16 +2,20 @@ import { useRef, useState } from 'react';
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
 import EmotionCard from "../emotion-card/EmotionCard";
 import CardDetailModal from '../emotion-card/CardDetailModal';
-import DialogueModal from '../dialogue/DialogueModal';
+import CardReading from '../cardReading/CardReading';
+import Summary from '../summary/Summary';
 import { simulatedEmotionData } from '../../type/emotionData';
 
-function Reel({ showDialogue = false }) {
+function Wheel({ showDialogue = false }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [highlightedCards, setHighlightedCards] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isDialogueOpen, setIsDialogueOpen] = useState(showDialogue);
+  const [isCardReadingOpen, setIsCardReadingOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [currentReadingIndex, setCurrentReadingIndex] = useState(0);
 
   const wheelRotation = useMotionValue(0);
   const controls = useAnimation();
@@ -25,12 +29,21 @@ function Reel({ showDialogue = false }) {
     return radians * (180 / Math.PI);
   };
 
-  const handleCardClick = (emotionData, event) => {
+  const handleCardClick = (emotionData, event, index) => {
     if (isAnimating) return;
     event?.preventDefault();
     event?.stopPropagation();
-    setSelectedEmotion(emotionData);
-    setIsModalOpen(true);
+    
+    if (highlightedCards.includes(index)) {
+      // If it's a highlighted card, start the reading sequence
+      setSelectedEmotion(emotionData);
+      setCurrentReadingIndex(selectedCards.findIndex(card => card.emotion === emotionData.emotion));
+      setIsCardReadingOpen(true);
+    } else {
+      // If it's not a highlighted card, show the detail modal
+      setSelectedEmotion(emotionData);
+      setIsModalOpen(true);
+    }
   };
 
   const closeModal = () => {
@@ -42,6 +55,8 @@ function Reel({ showDialogue = false }) {
     if (isAnimating) return;
     setIsAnimating(true);
     setHighlightedCards([]);
+    setSelectedCards([]);
+    setCurrentReadingIndex(0);
 
     const newRotation = wheelRotation.get() + 1800;
     await controls.start({
@@ -50,25 +65,54 @@ function Reel({ showDialogue = false }) {
     });
     wheelRotation.set(newRotation);
 
+    // Randomly select 2-3 cards
+    const numCards = Math.floor(Math.random() * 2) + 2; // Random number between 2 and 3
     const randomIndices = [];
-    while (randomIndices.length < 2) {
+    while (randomIndices.length < numCards) {
       const randomIndex = Math.floor(Math.random() * simulatedEmotionData.length);
       if (!randomIndices.includes(randomIndex)) {
         randomIndices.push(randomIndex);
       }
     }
 
+    const selectedEmotions = randomIndices.map(index => simulatedEmotionData[index]);
+    setSelectedCards(selectedEmotions);
     setHighlightedCards(randomIndices);
-    
-    // Add a 3-second delay before showing the dialogue
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
     setIsAnimating(false);
-    setIsDialogueOpen(true);
+  };
+
+  const handleNextCard = () => {
+    if (currentReadingIndex < selectedCards.length - 1) {
+      // Move to next card
+      setCurrentReadingIndex(prev => prev + 1);
+    } else {
+      // Show summary instead of closing
+      setIsCardReadingOpen(false);
+      setIsSummaryOpen(true);
+    }
+  };
+
+  const handleCloseSummary = () => {
+    setIsSummaryOpen(false);
+    setCurrentReadingIndex(0);
+    setSelectedCards([]);
+    setHighlightedCards([]);
   };
 
   const resetHighlights = () => {
     setHighlightedCards([]);
+    setSelectedCards([]);
+    setCurrentReadingIndex(0);
+  };
+
+  const handleBackToWheel = () => {
+    // Remove the current card from highlighted cards
+    const currentCard = selectedCards[currentReadingIndex];
+    const currentCardIndex = simulatedEmotionData.findIndex(
+      card => card.emotion === currentCard.emotion
+    );
+    setHighlightedCards(prev => prev.filter(index => index !== currentCardIndex));
+    setIsCardReadingOpen(false);
   };
 
   const totalCards = simulatedEmotionData.length;
@@ -109,7 +153,7 @@ function Reel({ showDialogue = false }) {
         <div className="relative w-full h-screen">
           {/* Controls Layer */}
           <div className="absolute top-0 left-0 right-0 z-50 flex justify-center controls-container">
-            {!isDialogueOpen && (
+            {!isCardReadingOpen && (
               <div className="flex gap-4">
                 <button
                   onClick={startSpinSequence}
@@ -192,7 +236,7 @@ function Reel({ showDialogue = false }) {
                     }}
                     animate={{ scale: isHighlighted ? 1.2 : 0.9 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    onClick={(e) => handleCardClick(data, e)}
+                    onClick={(e) => handleCardClick(data, e, index)}
                     whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
                     whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
                   >
@@ -211,12 +255,21 @@ function Reel({ showDialogue = false }) {
         emotionData={selectedEmotion}
       />
 
-      <DialogueModal 
-        isOpen={isDialogueOpen}
-        onClose={() => setIsDialogueOpen(false)}
+      <CardReading 
+        isOpen={isCardReadingOpen}
+        onClose={handleNextCard}
+        onBackToWheel={handleBackToWheel}
+        emotionData={selectedCards[currentReadingIndex]}
+        isLastCard={currentReadingIndex === selectedCards.length - 1}
+      />
+
+      <Summary
+        isOpen={isSummaryOpen}
+        onClose={handleCloseSummary}
+        cards={selectedCards}
       />
     </>
   );
 }
 
-export default Reel;
+export default Wheel;

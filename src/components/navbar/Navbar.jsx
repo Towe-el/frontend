@@ -6,7 +6,7 @@ function Navbar() {
         <div className="text-2xl font-light text-grey-800">Namo</div>
         <div className="space-x-6">
             <Link to="/info" className="text-grey-700 hover:text-blue-500 text-2xl font-light">INFO</Link>
-            {/* <Link to="/history">History</Link> */}
+            <Link to="/history" className="text-grey-700 hover:text-blue-500 text-2xl font-light">HISTORY</Link>
         </div>
     </nav>
   )
