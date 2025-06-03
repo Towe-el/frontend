@@ -2,9 +2,15 @@ import { useState, useEffect } from 'react';
 import EmotionCard from '../components/emotion-card/EmotionCard';
 import Navbar from '../components/navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
+import CardReading from '../components/cardReading/CardReading';
+import Summary from '../components/summary/Summary';
 
 const History = () => {
   const [readings, setReadings] = useState([]);
+  const [isHistoricalReadingOpen, setIsHistoricalReadingOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [selectedReading, setSelectedReading] = useState(null);
+  const [currentReadingIndex, setCurrentReadingIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,6 +61,29 @@ const History = () => {
     return emotions.flatMap(emotion => keywords[emotion.emotion.toLowerCase()] || []);
   };
 
+  const handleReadingClick = (reading) => {
+    setSelectedReading(reading);
+    setCurrentReadingIndex(0);
+    setIsHistoricalReadingOpen(true);
+  };
+
+  const handleNextCard = () => {
+    if (currentReadingIndex < selectedReading.cards.length - 1) {
+      setCurrentReadingIndex(prev => prev + 1);
+    } else {
+      setIsHistoricalReadingOpen(false);
+      setIsSummaryOpen(true);
+    }
+  };
+
+  const handleBackToHistory = () => {
+    setIsHistoricalReadingOpen(false);
+  };
+
+  const handleCloseSummary = () => {
+    setIsSummaryOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -83,7 +112,8 @@ const History = () => {
               {readings.map((reading) => (
                 <div
                   key={reading.timestamp}
-                  className="bg-white/40 backdrop-blur rounded-xl p-4 shadow-lg h-[300px] flex flex-col"
+                  className="bg-white/40 backdrop-blur rounded-xl p-4 shadow-lg h-[300px] flex flex-col cursor-pointer hover:bg-white/60 transition-colors"
+                  onClick={() => handleReadingClick(reading)}
                 >
                   <div className="flex items-start gap-4 h-full">
                     {/* Left side - Cards */}
@@ -128,6 +158,23 @@ const History = () => {
           )}
         </div>
       </div>
+
+      {selectedReading && (
+        <>
+          <CardReading 
+            isOpen={isHistoricalReadingOpen}
+            onClose={handleNextCard}
+            onBackToWheel={handleBackToHistory}
+            emotionData={selectedReading.cards[currentReadingIndex]}
+            isLastCard={currentReadingIndex === selectedReading.cards.length - 1}
+          />
+          <Summary
+            isOpen={isSummaryOpen}
+            onClose={handleCloseSummary}
+            cards={selectedReading.cards}
+          />
+        </>
+      )}
     </div>
   );
 };

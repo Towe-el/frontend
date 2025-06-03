@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
-import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
-import EmotionCard from "../emotion-card/EmotionCard";
+import { useAnimation, useMotionValue, motion } from 'framer-motion';
 import CardDetailModal from '../emotion-card/CardDetailModal';
 import CardReading from '../cardReading/CardReading';
 import Summary from '../summary/Summary';
-import { simulatedEmotionData } from '../../type/emotionData';
+import DialogueModal from '../dialogue/DialogueModal';
+import WheelCard from './WheelCard';
+import { simulatedEmotionData } from '../../data/emotionData';
 
 function Wheel({ showDialogue = false }) {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -16,6 +17,7 @@ function Wheel({ showDialogue = false }) {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [selectedCards, setSelectedCards] = useState([]);
   const [currentReadingIndex, setCurrentReadingIndex] = useState(0);
+  const [isDialogueOpen, setIsDialogueOpen] = useState(showDialogue);
 
   const wheelRotation = useMotionValue(0);
   const controls = useAnimation();
@@ -49,6 +51,18 @@ function Wheel({ showDialogue = false }) {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedEmotion(null);
+  };
+
+  const handleEmotionsAnalyzed = (emotions) => {
+    // Find the indices of the emotions in the simulated data
+    const indices = emotions.map(emotion => 
+      simulatedEmotionData.findIndex(card => card.emotion === emotion.emotion)
+    ).filter(index => index !== -1);
+
+    // Update the wheel with the analyzed emotions
+    setHighlightedCards(indices);
+    setSelectedCards(emotions);
+    setIsDialogueOpen(false);
   };
 
   const startSpinSequence = async () => {
@@ -115,9 +129,6 @@ function Wheel({ showDialogue = false }) {
     setIsCardReadingOpen(false);
   };
 
-  const totalCards = simulatedEmotionData.length;
-  const radius = 300;
-
   return (
     <>
       <style>{`
@@ -155,6 +166,12 @@ function Wheel({ showDialogue = false }) {
           <div className="absolute top-0 left-0 right-0 z-50 flex justify-center controls-container">
             {!isCardReadingOpen && (
               <div className="flex gap-4">
+                <button
+                  onClick={() => setIsDialogueOpen(true)}
+                  className="px-6 py-3 text-base font-light rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200"
+                >
+                  Talk to Toweel
+                </button>
                 <button
                   onClick={startSpinSequence}
                   disabled={isAnimating}
@@ -210,40 +227,17 @@ function Wheel({ showDialogue = false }) {
                 lastAngle.current = null;
               }}
             >
-              {simulatedEmotionData.map((data, index) => {
-                const anglePerCard = 360 / totalCards;
-                const baseAngle = anglePerCard * index;
-                const dynamicAngle = useTransform(wheelRotation, r => r + baseAngle);
-                const x = useTransform(dynamicAngle, a => 400 + radius * Math.cos((a - 90) * Math.PI / 180));
-                const y = useTransform(dynamicAngle, a => 400 + radius * Math.sin((a - 90) * Math.PI / 180));
-                const isHighlighted = highlightedCards.includes(index);
-
-                return (
-                  <motion.div
-                    key={index}
-                    className={`emotion-card absolute ${isHighlighted ? 'card-pulse' : ''}`}
-                    style={{
-                      position: 'absolute',
-                      left: x,
-                      top: y,
-                      translateX: "-50%",
-                      translateY: "-50%",
-                      rotate: useTransform(dynamicAngle, a => a),
-                      transformOrigin: "center center",
-                      fontSize: "1rem",
-                      pointerEvents: "auto",
-                      zIndex: isHighlighted ? 100 : 1,
-                    }}
-                    animate={{ scale: isHighlighted ? 1.2 : 0.9 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    onClick={(e) => handleCardClick(data, e, index)}
-                    whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
-                    whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
-                  >
-                    <EmotionCard emotion={data.emotion} score={data.score} />
-                  </motion.div>
-                );
-              })}
+              {simulatedEmotionData.map((data, index) => (
+                <WheelCard
+                  key={index}
+                  data={data}
+                  index={index}
+                  totalCards={simulatedEmotionData.length}
+                  wheelRotation={wheelRotation}
+                  isHighlighted={highlightedCards.includes(index)}
+                  onCardClick={handleCardClick}
+                />
+              ))}
             </motion.div>
           </div>
         </div>
@@ -267,6 +261,12 @@ function Wheel({ showDialogue = false }) {
         isOpen={isSummaryOpen}
         onClose={handleCloseSummary}
         cards={selectedCards}
+      />
+
+      <DialogueModal
+        isOpen={isDialogueOpen}
+        onClose={() => setIsDialogueOpen(false)}
+        onEmotionsAnalyzed={handleEmotionsAnalyzed}
       />
     </>
   );

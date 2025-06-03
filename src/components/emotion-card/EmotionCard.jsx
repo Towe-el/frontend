@@ -1,40 +1,85 @@
 import React from 'react';
+import AdmirationSvg from '../../assets/admiration.svg';
+import AmusementSvg from '../../assets/amusement.svg';
+import AngerSvg from '../../assets/anger.svg';
+import AnnoyanceSvg from '../../assets/annoyance.svg';
+import ApprovalSvg from '../../assets/approval.svg';
+import CaringSvg from '../../assets/caring.svg';
+import ConfusionSvg from '../../assets/confusion.svg';
+import CuriositySvg from '../../assets/curiosity.svg';
+import DesireSvg from '../../assets/desire.svg';
+import DisapprovalSvg from '../../assets/disapproval.svg';
+import DisappointmentSvg from '../../assets/disappointment.svg';
+import DisgustSvg from '../../assets/disgust.svg';
+import EmbarrassmentSvg from '../../assets/embarrassmeent.svg';
+import ExcitementSvg from '../../assets/excitement.svg';
+import FearSvg from '../../assets/fear.svg';
+import GriefSvg from '../../assets/grief.svg';
+import GratitudeSvg from '../../assets/gratitude.svg';
+import JoySvg from '../../assets/joy.svg';
+import LoveSvg from '../../assets/love.svg';
+import NervousnessSvg from '../../assets/nervourseness.svg';
+import OptimismSvg from '../../assets/optimism.svg';
+import PrideSvg from '../../assets/pride.svg';
+import RealizationSvg from '../../assets/realization.svg';
+import ReliefSvg from '../../assets/relief.svg';
+import RemorseSvg from '../../assets/remorse.svg';
+import SadnessSvg from '../../assets/sadness.svg';
+import SurpriseSvg from '../../assets/surprise.svg';
 
-const EmotionCard = ({ emotion, score, isModal = false }) => {
-  // Dynamic background color based on score
-  const getBackgroundColor = (score) => {
-    if (score > 0.7) return 'bg-yellow-400'; // Gold
-    if (score > 0.5) return 'bg-red-400'; // Tomato
-    return 'bg-blue-300'; // Light Blue
-  };
+const EmotionCard = ({ emotion, isModal = false }) => {
+  // Get the appropriate SVG based on emotion
+  const getEmotionSvg = (emotion) => {
+    const emotionMap = {
+      'admiration': AdmirationSvg,
+      'amusement': AmusementSvg,
+      'anger': AngerSvg,
+      'annoyance': AnnoyanceSvg,
+      'approval': ApprovalSvg,
+      'caring': CaringSvg,
+      'confusion': ConfusionSvg,
+      'curiosity': CuriositySvg,
+      'desire': DesireSvg,
+      'disapproval': DisapprovalSvg,
+      'disappointment': DisappointmentSvg,
+      'disgust': DisgustSvg,
+      'embarrassment': EmbarrassmentSvg,
+      'excitement': ExcitementSvg,
+      'fear': FearSvg,
+      'grief': GriefSvg,
+      'gratitude': GratitudeSvg,
+      'joy': JoySvg,
+      'love': LoveSvg,
+      'nervousness': NervousnessSvg,
+      'optimism': OptimismSvg,
+      'pride': PrideSvg,
+      'realization': RealizationSvg,
+      'relief': ReliefSvg,
+      'remorse': RemorseSvg,
+      'sadness': SadnessSvg,
+      'surprise': SurpriseSvg
+    };
 
-  // Dynamic opacity based on score
-  const getOpacity = (score) => {
-    return score > 0.2 ? 'opacity-100' : 'opacity-50';
+    return emotionMap[emotion.toLowerCase()] || OptimismSvg; // Default fallback
   };
 
   return (
     <div 
       className={`
-        ${getBackgroundColor(score)}
-        ${getOpacity(score)}
-        ${isModal ? 'w-60 h-80' : 'w-25 h-38'}
-        flex flex-col items-center justify-center
-        rounded-lg m-2.5 shadow-lg
+        flex items-center justify-center
         transition-all duration-300
-        ${!isModal ? 'cursor-pointer hover:shadow-xl hover:scale-105' : ''}
+        ${!isModal ? 'cursor-pointer hover:scale-105' : ''}
       `}
       style={{
         width: isModal ? '260px' : '100px',
         height: isModal ? '400px' : '150px',
       }}
     >
-      <h3 className={`${isModal ? 'text-2xl mb-3' : 'text-lg m-2 w-full text-center'} font-semibold text-gray-800`}>
-        {emotion}
-      </h3>
-      <p className={`${isModal ? 'text-xl font-bold text-gray-800 m-0' : 'invisible'} `}>
-        {(score * 100).toFixed(0)}%
-      </p>
+      <img 
+        src={getEmotionSvg(emotion)} 
+        alt={emotion}
+        className="w-full h-full object-contain"
+      />
     </div>
   );
 };

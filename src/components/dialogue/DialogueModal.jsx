@@ -1,8 +1,8 @@
 'use client'
 
-import mockMessages from '../../type/mockMessages.json'
 import { useState, useRef, useEffect } from 'react'
 import { motion, useAnimate, AnimatePresence } from 'framer-motion'
+import { analyzeEmotions } from '../../services/api'
 
 const LoadingDots = () => {
   return (
@@ -32,20 +32,21 @@ const initialAiMessages = [
   { sender: 'ai', text: "How are you feeling right now?" }
 ]
 
-const DialogueModal = ({ isOpen, onClose }) => {
+const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
-  const [mockIndex, setMockIndex] = useState(0)
   const [initialDone, setInitialDone] = useState(false)
   const [pendingResponse, setPendingResponse] = useState(false)
   const [scope, animate] = useAnimate()
   const containerRef = useRef(null)
 
-  // Reset mockIndex when modal opens
+  // Reset state when modal opens
   useEffect(() => {
-    console.log('Modal open effect running, isOpen:', isOpen)
     if (isOpen) {
-      setMockIndex(0)
+      setMessages([])
+      setInput('')
+      setInitialDone(false)
+      setPendingResponse(false)
     }
   }, [isOpen])
 
@@ -58,55 +59,75 @@ const DialogueModal = ({ isOpen, onClose }) => {
     }
   }
 
-  // Handle AI response
+  // Handle AI response and emotion analysis
   useEffect(() => {
     if (pendingResponse) {
-      console.log('Setting up AI response timeout')
-      const timeoutId = setTimeout(() => {
-        console.log('Timeout callback executed')
-        console.log('Current mockIndex:', mockIndex)
-        console.log('Available mock messages:', mockMessages)
-        
-        if (!mockMessages || !Array.isArray(mockMessages)) {
-          console.error('mockMessages is not an array:', mockMessages)
+      const analyzeEmotionsFromText = async () => {
+        try {
+          // Get the last user message
+          const lastUserMessage = messages.find(msg => msg.sender === 'user')?.text
+          if (!lastUserMessage) return
+
+          console.log('Sending message to API:', lastUserMessage)
+
+          // Call the emotion analysis API
+          const result = await analyzeEmotions(lastUserMessage)
+          console.log('API Response:', result)
+          
+          // Add AI response with the analyzed emotions
+          setMessages(prev => [
+            ...prev,
+            { 
+              sender: 'ai', 
+              text: "I've analyzed your emotions. Here's what I found:" 
+            },
+            ...result.emotions.map(emotion => ({
+              sender: 'ai',
+              text: `• ${emotion.text} (${emotion.emotion} - ${Math.round(emotion.score * 100)}%)`
+            }))
+          ])
+
+          // Pass the emotions to the parent component
+          if (onEmotionsAnalyzed) {
+            console.log('Passing emotions to parent:', result.emotions)
+            onEmotionsAnalyzed(result.emotions)
+          }
+
           setPendingResponse(false)
-          return
+        } catch (error) {
+          console.error('Error analyzing emotions:', error)
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response
+          })
+          setMessages(prev => [
+            ...prev,
+            { 
+              sender: 'ai', 
+              text: "I'm sorry, I had trouble analyzing your emotions. Could you try again?" 
+            }
+          ])
+          setPendingResponse(false)
         }
+      }
 
-        const aiMessage = mockMessages[mockIndex] || {
-          sender: 'ai',
-          text: "I'm out of mock responses — try refreshing or changing the topic!"
-        }
-        console.log('Selected AI message:', aiMessage)
-        
-        setMessages(prev => {
-          console.log('Updating messages with AI response')
-          return [...prev, aiMessage]
-        })
-        setMockIndex(prev => prev + 1)
-        setPendingResponse(false)
-      }, 1000)
-
-      return () => clearTimeout(timeoutId)
+      analyzeEmotionsFromText()
     }
-  }, [pendingResponse, mockIndex])
+  }, [pendingResponse, messages, onEmotionsAnalyzed])
 
   // Scroll to bottom when messages change or when pending response changes
   useEffect(() => {
     if (isOpen) {
-      // Add a small delay to ensure the DOM has updated
       setTimeout(scrollToBottom, 100)
     }
   }, [messages, pendingResponse, isOpen])
 
   // Handle initial AI message sequence
   useEffect(() => {
-    console.log('Initial message effect running')
     if (isOpen && messages.length === 0 && !initialDone) {
-      console.log('Starting initial messages sequence')
       initialAiMessages.forEach((msg, idx) => {
         setTimeout(() => {
-          console.log('Adding initial message:', msg)
           setMessages(prev => [...prev, msg])
           if (idx === initialAiMessages.length - 1) setInitialDone(true)
         }, 800 * idx)
@@ -115,10 +136,8 @@ const DialogueModal = ({ isOpen, onClose }) => {
   }, [isOpen, initialDone, messages.length])
 
   const sendMessage = async () => {
-    console.log('sendMessage function called')
     if (!input.trim()) return
 
-    console.log('Adding user message:', input)
     const userMessage = { sender: 'user', text: input }
     setMessages(prev => [...prev, userMessage])
     setInput('')
