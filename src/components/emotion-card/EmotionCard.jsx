@@ -1,33 +1,42 @@
-import React from 'react';
-import AdmirationSvg from '../../assets/admiration.svg';
+import React, { useEffect, useRef } from 'react';
+import { animateEmotion, resetEmotionAnimation } from '../../animations/emotionAnimations';
+import { GratitudeSvg, ApprovalSvg, DisapprovalSvg, CaringSvg, RealizationSvg, OptimismSvg, ReliefSvg, AdmirationSvg, EmbarrassmentSvg } from '../emotion-svgs';
 import AmusementSvg from '../../assets/amusement.svg';
 import AngerSvg from '../../assets/anger.svg';
 import AnnoyanceSvg from '../../assets/annoyance.svg';
-import ApprovalSvg from '../../assets/approval.svg';
-import CaringSvg from '../../assets/caring.svg';
 import ConfusionSvg from '../../assets/confusion.svg';
 import CuriositySvg from '../../assets/curiosity.svg';
 import DesireSvg from '../../assets/desire.svg';
-import DisapprovalSvg from '../../assets/disapproval.svg';
 import DisappointmentSvg from '../../assets/disappointment.svg';
 import DisgustSvg from '../../assets/disgust.svg';
-import EmbarrassmentSvg from '../../assets/embarrassmeent.svg';
 import ExcitementSvg from '../../assets/excitement.svg';
 import FearSvg from '../../assets/fear.svg';
 import GriefSvg from '../../assets/grief.svg';
-import GratitudeSvg from '../../assets/gratitude.svg';
 import JoySvg from '../../assets/joy.svg';
 import LoveSvg from '../../assets/love.svg';
 import NervousnessSvg from '../../assets/nervourseness.svg';
-import OptimismSvg from '../../assets/optimism.svg';
 import PrideSvg from '../../assets/pride.svg';
-import RealizationSvg from '../../assets/realization.svg';
-import ReliefSvg from '../../assets/relief.svg';
 import RemorseSvg from '../../assets/remorse.svg';
 import SadnessSvg from '../../assets/sadness.svg';
 import SurpriseSvg from '../../assets/surprise.svg';
 
 const EmotionCard = ({ emotion, isModal = false }) => {
+  const svgRef = useRef(null);
+
+  useEffect(() => {
+    if (isModal && svgRef.current) {
+      // Start animation when modal opens
+      animateEmotion(svgRef.current, emotion.toLowerCase());
+    }
+
+    // Cleanup animation when component unmounts or modal closes
+    return () => {
+      if (svgRef.current) {
+        resetEmotionAnimation(svgRef.current, emotion.toLowerCase());
+      }
+    };
+  }, [isModal, emotion]);
+
   // Get the appropriate SVG based on emotion
   const getEmotionSvg = (emotion) => {
     const emotionMap = {
@@ -60,8 +69,11 @@ const EmotionCard = ({ emotion, isModal = false }) => {
       'surprise': SurpriseSvg
     };
 
-    return emotionMap[emotion.toLowerCase()] || OptimismSvg; // Default fallback
+    return emotionMap[emotion.toLowerCase()];
   };
+
+  const EmotionComponent = getEmotionSvg(emotion);
+  const isAnimatedEmotion = ['gratitude', 'approval', 'disapproval', 'caring', 'realization', 'optimism', 'relief', 'admiration', 'embarrassment'].includes(emotion.toLowerCase());
 
   return (
     <div 
@@ -75,11 +87,17 @@ const EmotionCard = ({ emotion, isModal = false }) => {
         height: isModal ? '400px' : '150px',
       }}
     >
-      <img 
-        src={getEmotionSvg(emotion)} 
-        alt={emotion}
-        className="w-full h-full object-contain"
-      />
+      {isAnimatedEmotion ? (
+        <div ref={svgRef} className="w-full h-full">
+          <EmotionComponent className="w-full h-full" />
+        </div>
+      ) : (
+        <img 
+          src={EmotionComponent} 
+          alt={emotion}
+          className="w-full h-full object-contain shadow-xl"
+        />
+      )}
     </div>
   );
 };
