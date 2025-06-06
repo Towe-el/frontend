@@ -13,4 +13,4 @@ const AdmirationSvg = ({ className }) => {
   );
 };
 
-export default AdmirationSvg; 
+export default AdmirationSvg;

@@ -93,6 +93,17 @@ const animationConfigs = {
       scale: [1, 1.05, 1]
     }
   },
+  confusion: {
+    selector: '#confusion_question_mark',
+    duration: 2000,
+    delay: 0,
+    reverse: false,
+    transform: true,
+    animation: {
+      rotate: [-15, 15, -15],
+      scale: [1, 1.1, 1]
+    }
+  },
   // Add configurations for other emotions here
   // Example:
   // joy: {

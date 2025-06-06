@@ -1,24 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { animateEmotion, resetEmotionAnimation } from '../../animations/emotionAnimations';
-import { GratitudeSvg, ApprovalSvg, DisapprovalSvg, CaringSvg, RealizationSvg, OptimismSvg, ReliefSvg, AdmirationSvg, EmbarrassmentSvg } from '../emotion-svgs';
+import { GratitudeSvg, ApprovalSvg, DisapprovalSvg, CaringSvg, RealizationSvg, OptimismSvg, ReliefSvg, AdmirationSvg, EmbarrassmentSvg, ConfusionSvg, DisappointmentSvg, SadnessSvg, GriefSvg, RemorseSvg, NervousnessSvg, AnnoyanceSvg, DisgustSvg, FearSvg, AngerSvg, SurpriseSvg, DesireSvg } from '../emotion-svgs';
 import AmusementSvg from '../../assets/amusement.svg';
-import AngerSvg from '../../assets/anger.svg';
-import AnnoyanceSvg from '../../assets/annoyance.svg';
-import ConfusionSvg from '../../assets/confusion.svg';
 import CuriositySvg from '../../assets/curiosity.svg';
-import DesireSvg from '../../assets/desire.svg';
-import DisappointmentSvg from '../../assets/disappointment.svg';
-import DisgustSvg from '../../assets/disgust.svg';
 import ExcitementSvg from '../../assets/excitement.svg';
-import FearSvg from '../../assets/fear.svg';
-import GriefSvg from '../../assets/grief.svg';
 import JoySvg from '../../assets/joy.svg';
 import LoveSvg from '../../assets/love.svg';
-import NervousnessSvg from '../../assets/nervourseness.svg';
 import PrideSvg from '../../assets/pride.svg';
-import RemorseSvg from '../../assets/remorse.svg';
-import SadnessSvg from '../../assets/sadness.svg';
-import SurpriseSvg from '../../assets/surprise.svg';
 
 const EmotionCard = ({ emotion, isModal = false }) => {
   const svgRef = useRef(null);
@@ -73,7 +61,7 @@ const EmotionCard = ({ emotion, isModal = false }) => {
   };
 
   const EmotionComponent = getEmotionSvg(emotion);
-  const isAnimatedEmotion = ['gratitude', 'approval', 'disapproval', 'caring', 'realization', 'optimism', 'relief', 'admiration', 'embarrassment'].includes(emotion.toLowerCase());
+  const isAnimatedEmotion = ['gratitude', 'approval', 'disapproval', 'caring', 'realization', 'optimism', 'relief', 'admiration', 'embarrassment', 'confusion', 'disappointment', 'sadness', 'grief', 'remorse', 'nervousness', 'annoyance', 'disgust', 'fear', 'anger', 'surprise', 'desire'].includes(emotion.toLowerCase());
 
   return (
     <div 
