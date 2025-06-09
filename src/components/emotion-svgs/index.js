@@ -19,7 +19,9 @@ export { default as FearSvg } from './FearSvg'
 export { default as AngerSvg } from './AngerSvg'
 export { default as SurpriseSvg } from './SurpriseSvg'
 export { default as DesireSvg} from './DesireSvg'
-// Export other emotion SVGs as they are created
-// export { default as JoySvg } from './JoySvg';
-// export { default as LoveSvg } from './LoveSvg';
-// etc... 
+export { default as CuriositySvg } from './CuriositySvg'
+export { default as PrideSvg } from './PrideSvg'
+export { default as AmusementSvg } from './AmusementSvg'
+export { default as JoySvg} from './JoySvg'
+export { default as ExcitementSvg } from './ExcitementSvg'
+export { default as LoveSvg } from './LoveSvg'

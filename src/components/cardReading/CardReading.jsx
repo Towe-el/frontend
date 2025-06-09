@@ -1,9 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 
 const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }) => {
-  const [currentStep, setCurrentStep] = useState(0);
   const dialogueRef = useRef(null);
   
   const readingSteps = [
@@ -11,8 +10,8 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
       title: "Primary Emotion",
       content: (
         <>
-          <p className="text-3xl font-bold text-blue-600">{emotionData?.emotion}</p>
-          <p className="text-gray-600 mt-2">Confidence: {(emotionData?.score * 100).toFixed(0)}%</p>
+          <p className="text-3xl font-bold text-blue-600">{emotionData?.emotion || 'Unknown'}</p>
+          <p className="text-gray-600 mt-2">Confidence: {((emotionData?.score || 0) * 100).toFixed(0)}%</p>
         </>
       )
     },
@@ -20,7 +19,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
       title: "What This Means",
       content: (
         <p className="text-gray-700">
-          This emotion suggests you're experiencing a significant moment of {emotionData?.emotion.toLowerCase()}. 
+          This emotion suggests you're experiencing a significant moment of {(emotionData?.emotion || 'emotion').toLowerCase()}. 
           Take a moment to acknowledge this feeling and understand its impact on your current state.
         </p>
       )
@@ -40,7 +39,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
       title: "Understanding Your Emotion",
       content: (
         <p className="text-gray-700">
-          {emotionData?.emotion} is a natural response to your current circumstances. 
+          {emotionData?.emotion || 'This emotion'} is a natural response to your current circumstances. 
           It's important to recognize that this emotion is temporary and can be a valuable 
           source of insight into your needs and values.
         </p>
@@ -51,40 +50,24 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
       content: (
         <p className="text-gray-700">
           Remember that emotions are like waves - they come and go. While you're experiencing 
-          this {emotionData?.emotion.toLowerCase()}, try to observe it without judgment. 
+          this {(emotionData?.emotion || 'emotion').toLowerCase()}, try to observe it without judgment. 
           This awareness can help you navigate through this feeling with greater ease.
         </p>
       )
     }
   ];
 
-  // Auto-scroll to bottom when new content is added
+  // Auto-scroll to top when modal opens
   useEffect(() => {
     if (dialogueRef.current) {
-      if (currentStep === 0) {
-        // Scroll to top when moving to next card
-        dialogueRef.current.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      } else {
-        // Scroll to bottom when new content is added
-        dialogueRef.current.scrollTo({
-          top: dialogueRef.current.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
+      dialogueRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     }
-  }, [currentStep]);
-
-  const handleContinue = () => {
-    if (currentStep < readingSteps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
+  }, [isOpen]);
 
   const handleNextCard = () => {
-    setCurrentStep(0);
     onClose();
   };
 
@@ -108,19 +91,19 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
               damping: 25,
               duration: 0.5
             }}
-            className="rounded-xl p-8 w-[90%] max-w-6xl h-[80vh] bg-white/40 shadow-lg backdrop-blur flex"
+            className="fixed inset-0 bg-white/40 backdrop-blur flex"
           >
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl"
+              className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl z-10"
               onClick={onClose}
             >
               ×
             </motion.button>
 
             {/* Left side - Emotion Card */}
-            <div className="w-1/3 flex items-center justify-center pr-8">
+            <div className="w-1/3 flex items-center justify-center p-8">
               {emotionData && (
                 <div className="transform scale-150">
                   <EmotionCard 
@@ -133,7 +116,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
             </div>
 
             {/* Right side - AI Dialogue */}
-            <div className="w-2/3 flex flex-col">
+            <div className="w-2/3 flex flex-col p-8">
               <h2 className="text-2xl font-semibold mb-6">Your Emotion Reading</h2>
               
               <div 
@@ -142,17 +125,14 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
               >
                 {emotionData && (
                   <>
-                    {readingSteps.slice(0, currentStep + 1).map((step, index) => (
-                      <motion.div
+                    {readingSteps.map((step, index) => (
+                      <div
                         key={index}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
                         className="bg-white/60 p-6 rounded-lg"
                       >
                         <h3 className="text-xl font-medium mb-2">{step.title}</h3>
                         {step.content}
-                      </motion.div>
+                      </div>
                     ))}
                   </>
                 )}
@@ -169,29 +149,18 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
                   Back to Wheel
                 </motion.button>
                 
-                {currentStep < readingSteps.length - 1 ? (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleContinue}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                  >
-                    Continue Reading
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onClose}
-                    className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                      isLastCard 
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
-                    }`}
-                  >
-                    {isLastCard ? 'Finish Reading' : 'Read Next Card'}
-                  </motion.button>
-                )}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleNextCard}
+                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                    isLastCard 
+                      ? 'bg-green-500 hover:bg-green-600 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {isLastCard ? 'Finish Reading' : 'Read Next Card'}
+                </motion.button>
               </div>
             </div>
           </motion.div>

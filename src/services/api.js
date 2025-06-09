@@ -32,11 +32,10 @@ export const analyzeEmotions = async (text) => {
 
     // Transform the response to match our expected format
     const transformedData = {
-      emotions: data.results.map(result => ({
-        emotion: result.emotion_label[0], // Take the first emotion label
-        score: result.score,
-        text: result.text
-      }))
+      emotions: data.results || [],
+      needs_more_detail: data.emotion_analysis?.needs_more_detail || false,
+      guidance_response: data.guidance_response || null,
+      emotion_analysis: data.emotion_analysis || null
     }
     console.log('Transformed data:', transformedData)
     return transformedData
@@ -51,12 +50,16 @@ export const mockAnalyzeEmotions = async (text) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  // Mock response with 3 emotions
+  // Mock response with the new format
   return {
-    emotions: [
-      { emotion: 'joy', score: 0.85, text: 'I feel happy and content' },
-      { emotion: 'excitement', score: 0.75, text: 'I am excited about the future' },
-      { emotion: 'optimism', score: 0.65, text: 'I am optimistic about my goals' }
-    ]
+    emotions: [],
+    needs_more_detail: true,
+    guidance_response: "I understand you're feeling this way. Could you tell me more about what's causing these feelings?",
+    emotion_analysis: {
+      has_emotion_content: true,
+      emotion_intensity: 0.5,
+      confidence: 0.4,
+      needs_more_detail: true
+    }
   };
 }; 

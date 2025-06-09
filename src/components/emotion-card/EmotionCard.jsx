@@ -1,12 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { animateEmotion, resetEmotionAnimation } from '../../animations/emotionAnimations';
-import { GratitudeSvg, ApprovalSvg, DisapprovalSvg, CaringSvg, RealizationSvg, OptimismSvg, ReliefSvg, AdmirationSvg, EmbarrassmentSvg, ConfusionSvg, DisappointmentSvg, SadnessSvg, GriefSvg, RemorseSvg, NervousnessSvg, AnnoyanceSvg, DisgustSvg, FearSvg, AngerSvg, SurpriseSvg, DesireSvg } from '../emotion-svgs';
-import AmusementSvg from '../../assets/amusement.svg';
-import CuriositySvg from '../../assets/curiosity.svg';
-import ExcitementSvg from '../../assets/excitement.svg';
-import JoySvg from '../../assets/joy.svg';
-import LoveSvg from '../../assets/love.svg';
-import PrideSvg from '../../assets/pride.svg';
+import { GratitudeSvg, ApprovalSvg, DisapprovalSvg, CaringSvg, RealizationSvg, OptimismSvg, ReliefSvg, AdmirationSvg, EmbarrassmentSvg, ConfusionSvg, DisappointmentSvg, SadnessSvg, GriefSvg, RemorseSvg, NervousnessSvg, AnnoyanceSvg, DisgustSvg, FearSvg, AngerSvg, SurpriseSvg, DesireSvg, CuriositySvg, PrideSvg, AmusementSvg, JoySvg, ExcitementSvg, LoveSvg } from '../emotion-svgs';
 
 const EmotionCard = ({ emotion, isModal = false }) => {
   const svgRef = useRef(null);
@@ -61,7 +55,7 @@ const EmotionCard = ({ emotion, isModal = false }) => {
   };
 
   const EmotionComponent = getEmotionSvg(emotion);
-  const isAnimatedEmotion = ['gratitude', 'approval', 'disapproval', 'caring', 'realization', 'optimism', 'relief', 'admiration', 'embarrassment', 'confusion', 'disappointment', 'sadness', 'grief', 'remorse', 'nervousness', 'annoyance', 'disgust', 'fear', 'anger', 'surprise', 'desire'].includes(emotion.toLowerCase());
+  const isAnimatedEmotion = ['gratitude', 'approval', 'disapproval', 'caring', 'realization', 'optimism', 'relief', 'admiration', 'embarrassment', 'confusion', 'disappointment', 'sadness', 'grief', 'remorse', 'nervousness', 'annoyance', 'disgust', 'fear', 'anger', 'surprise', 'desire', 'curiosity', 'pride', 'amusement', 'joy', 'excitement', 'love'].includes(emotion.toLowerCase());
 
   return (
     <div 

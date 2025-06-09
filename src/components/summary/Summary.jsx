@@ -31,10 +31,10 @@ const Summary = ({ isOpen, onClose, cards }) => {
           className="fixed inset-0 z-[1000] backdrop-blur-md flex items-center justify-center"
         >
           <div
-            className="rounded-xl p-8 w-[90%] max-w-6xl h-[80vh] bg-white/40 shadow-lg backdrop-blur flex flex-col"
+            className="fixed inset-0 bg-white/40 backdrop-blur flex flex-col p-8"
           >
             <button
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl"
+              className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl z-10"
               onClick={onClose}
             >
               ×

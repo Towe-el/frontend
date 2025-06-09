@@ -1,5 +1,7 @@
 // Emotion Animation Utilities
 
+import Disappointment from "../components/emotion-svgs/DisappointmentSvg";
+
 // Base animation functions
 const getPathLength = (path) => {
   if (!path || typeof path.getTotalLength !== 'function') return 0;
@@ -94,24 +96,35 @@ const animationConfigs = {
     }
   },
   confusion: {
-    selector: '#confusion_question_mark',
+    selector: '#confusion_lines path',
+    duration: 2000,
+    delay: 0,
+    reverse: false
+  },
+  disappointment: {
+    selector: '#line1 line, #line2 line, #line3 line, #line4 line, #line5 line, #line6 line',
+    duration: 800,
+    delay: 50,
+    reverse: false
+  },
+  sadness: {
+    selector: '#rains line',
+    duration: 1500,
+    delay: 50,
+    reverse: false
+  },
+  grief: {
+    selector: '#lost',
     duration: 2000,
     delay: 0,
     reverse: false,
     transform: true,
     animation: {
-      rotate: [-15, 15, -15],
-      scale: [1, 1.1, 1]
+      scale: [0, 1.2, 1],
+      rotate: [0, 180, 360],
+      opacity: [0, 1, 1]
     }
-  },
-  // Add configurations for other emotions here
-  // Example:
-  // joy: {
-  //   selector: '#sparkles path',
-  //   duration: 600,
-  //   delay: 100,
-  //   reverse: false,
-  // },
+  }
 };
 
 // Generic animation function that works for all emotions
@@ -128,7 +141,7 @@ export const animateEmotion = (svgElement, emotion) => {
       if (config.animation) {
         // Handle complex animations with multiple properties
         const frames = [];
-        for (let i = 0; i < config.animation.rotate.length; i++) {
+        for (let i = 0; i < (config.animation.rotate?.length || config.animation.scale?.length || config.animation.opacity?.length || 0); i++) {
           const frame = {};
           if (config.animation.rotate) {
             frame.transform = `rotate(${config.animation.rotate[i]}deg)`;
@@ -185,4 +198,36 @@ export const animateGratitudeHearts = (svgElement) => {
 
 export const resetGratitudeHearts = (svgElement) => {
   resetEmotionAnimation(svgElement, 'gratitude');
+};
+
+export const animateDisappointmentLines = (svgElement) => {
+  animateEmotion(svgElement, 'disappointment');
+};
+
+export const resetDisappointmentLines = (svgElement) => {
+  resetEmotionAnimation(svgElement, 'disappointment');
+};
+
+export const animateConfusionPath = (svgElement) => {
+  animateEmotion(svgElement, 'confusion');
+};
+
+export const resetConfusionPath = (svgElement) => {
+  resetEmotionAnimation(svgElement, 'confusion');
+};
+
+export const animateSadnessRain = (svgElement) => {
+  animateEmotion(svgElement, 'sadness');
+};
+
+export const resetSadnessRain = (svgElement) => {
+  resetEmotionAnimation(svgElement, 'sadness');
+};
+
+export const animateGriefElements = (svgElement) => {
+  animateEmotion(svgElement, 'grief');
+};
+
+export const resetGriefElements = (svgElement) => {
+  resetEmotionAnimation(svgElement, 'grief');
 }; 
