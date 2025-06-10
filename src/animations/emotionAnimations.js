@@ -202,6 +202,13 @@ const animationConfigs = {
     delay: 0,
     reverse: false,
     transform: true
+  },
+  fear: {
+    selector: "#swirl path",
+    duration: 1000,
+    delay:0,
+    reverse: false,
+    transform: false,
   }
 };
 
@@ -237,7 +244,7 @@ export const animateEmotion = (svgElement, emotion) => {
         // Simple floating animation
         keyframes.push(
           { transform: 'translateY(0)' },
-          { transform: 'translateY(-10px)' },
+          { transform: 'translateY(-30px)' },
           { transform: 'translateY(0)' }
         );
       }
