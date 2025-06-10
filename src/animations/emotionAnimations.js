@@ -1,7 +1,3 @@
-// Emotion Animation Utilities
-
-import Disappointment from "../components/emotion-svgs/DisappointmentSvg";
-
 // Base animation functions
 const getPathLength = (path) => {
   if (!path || typeof path.getTotalLength !== 'function') return 0;
@@ -18,8 +14,8 @@ const animatePath = (path, duration = 1000, delay = 0) => {
   path.style.opacity = 1;
   
   path.animate([
-    { strokeDashoffset: length },
-    { strokeDashoffset: 0 }
+    { strokeDashoffset: length, opacity: 0 },
+    { strokeDashoffset: 0, opacity: 1 }
   ], {
     duration: duration,
     delay: delay,
@@ -123,6 +119,23 @@ const animationConfigs = {
       scale: [0, 1.2, 1],
       rotate: [0, 180, 360],
       opacity: [0, 1, 1]
+    }
+  },
+  remorse: {
+    selector: '#Vector',
+    duration: 2000,
+    delay: 50,
+    reverse: false
+  },
+  nervousness: {
+    selector: '#ellipse',
+    duration: 2000,
+    delay: 0,
+    reverse: true,
+    transform: true,
+    animation: {
+      scale: [1, 0.5, 1],
+      strokeWidth: [0.8, 2.5, 0.8]
     }
   }
 };
@@ -230,4 +243,8 @@ export const animateGriefElements = (svgElement) => {
 
 export const resetGriefElements = (svgElement) => {
   resetEmotionAnimation(svgElement, 'grief');
-}; 
+};
+
+export const animateNervousnessLine = (svgElement) => {
+  animateEmotion(svgElement, 'nervousness');
+};
