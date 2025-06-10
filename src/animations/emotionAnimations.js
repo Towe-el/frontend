@@ -52,15 +52,25 @@ const animationConfigs = {
   },
   realization: {
     selector: '#vector path',
-    duration: 600,
-    delay: 50,
-    reverse: false // animate from center outward
+    duration: 1500,
+    delay: 0,
+    reverse: false,
+    transform: false,
+    animation: {
+      strokeDasharray: ['1000 0', '0 1000'],
+      strokeDashoffset: [0, 1000]
+    }
   },
   optimism: {
-    selector: '#shines path',
-    duration: 600,
+    selector: '#shines_small path, #shines path',
+    duration: 2000,
     delay: 100,
-    reverse: false // animate rays one by one
+    reverse: true,
+    transform: false,
+    animation: {
+      strokeDasharray: ['1000 0', '0 1000'],
+      strokeDashoffset: [1000, 0]
+    }
   },
   relief: {
     selector: '#cloud',
@@ -70,26 +80,16 @@ const animationConfigs = {
     transform: true // indicate this is a transform animation
   },
   admiration: {
-    selector: '#star',
-    duration: 2000,
-    delay: 0,
+    selector: '#star, #eye',
+    duration: 1000,
+    delay: 50,
     reverse: false,
-    animation: {
-      scale: [1, 1.1, 1],
-      rotate: [0, 5, 0],
-      opacity: [1, 0.8, 1]
-    }
   },
   embarrassment: {
-    selector: '#spiral',
-    duration: 3000,
+    selector: '#Group_14 path',
+    duration: 2000,
     delay: 0,
-    reverse: false,
-    transform: true,
-    animation: {
-      rotate: [0, 360],
-      scale: [1, 1.05, 1]
-    }
+    reverse: true,
   },
   confusion: {
     selector: '#confusion_lines path',
@@ -111,13 +111,11 @@ const animationConfigs = {
   },
   grief: {
     selector: '#lost',
-    duration: 2000,
+    duration: 3000,
     delay: 0,
     reverse: false,
     transform: true,
     animation: {
-      scale: [0, 1.2, 1],
-      rotate: [0, 180, 360],
       opacity: [0, 1, 1]
     }
   },
@@ -132,11 +130,78 @@ const animationConfigs = {
     duration: 2000,
     delay: 0,
     reverse: true,
+  },
+  annoyance: {
+    selector: "#line",
+    duration: 2000,
+    delay: 0,
+    reverse: false
+  },
+  disgust: {
+    selector: '#Vector path, #Vector_5 path, #Vector_2 path, #Vector_3 path, #Vector_4 path',
+    duration: 2000,
+    delay: 50,
+    reverse: false,
     transform: true,
     animation: {
-      scale: [1, 0.5, 1],
-      strokeWidth: [0.8, 2.5, 0.8]
+      translateY: [0, 30, 0],
+      scale: [1, 1.05, 1]
     }
+  },
+  anger: {
+    selector: "#shape",
+    duration: 1500,
+    delay: 50,
+    reverse: false,
+  },
+  surprise: {
+    selector: "#shines_l path, #shines_s path, #elipses circle",
+    duration: 800,
+    delay: 50,
+    reverse: false
+  },
+  desire: {
+    selector: "#line_1, #line_2",
+    duration: 2000,
+    delay: 50,
+    reverse: true
+  },
+  curiosity: {
+    selector: "#Ellipse_1, #Ellipse_2, #Star",
+    duration: 1500,
+    delay: 100,
+    reverse: false
+  },
+  pride: {
+    selector: "#Vector, #Ellipse",
+    duration: 2000,
+    delay: 50,
+    reverse: true
+  },
+  amusement: {
+    selector: "#Vector",
+    duration: 2000,
+    delay: 0,
+    reverse: true
+  },
+  excitement: {
+    selector: "#Vector",
+    duration: 2000,
+    delay: 0,
+    reverse: true
+  },
+  joy: {
+    selector: "#bubbles path",
+    duration: 2000,
+    delay: 50,
+    reverse: false
+  },
+  love: {
+    selector: "#Vector",
+    duration: 2000,
+    delay: 0,
+    reverse: false,
+    transform: true
   }
 };
 
@@ -247,4 +312,8 @@ export const resetGriefElements = (svgElement) => {
 
 export const animateNervousnessLine = (svgElement) => {
   animateEmotion(svgElement, 'nervousness');
+};
+
+export const animateAnnoyancePath = (svgElement) => {
+  animateEmotion(svgElement, 'annoyance');
 };
