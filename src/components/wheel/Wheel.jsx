@@ -53,46 +53,108 @@ function Wheel({ showDialogue = false }) {
     setSelectedEmotion(null);
   };
 
-  const handleEmotionsAnalyzed = (emotions) => {
+  const handleEmotionsAnalyzed = async (emotions, searchResult) => {
+    console.log('Received emotions:', emotions);
+    
     // Find the indices of the emotions in the simulated data
     const indices = emotions.map(emotion => 
-      simulatedEmotionData.findIndex(card => card.emotion === emotion.emotion)
+      simulatedEmotionData.findIndex(card => card.emotion.toLowerCase() === emotion.emotion.toLowerCase())
     ).filter(index => index !== -1);
+
+    console.log('Found emotion indices:', indices);
 
     // Update the wheel with the analyzed emotions
     setHighlightedCards(indices);
-    setSelectedCards(emotions);
-    setIsDialogueOpen(false);
+    setSelectedCards(emotions.map(emotion => {
+      const matchingCard = simulatedEmotionData.find(card => 
+        card.emotion.toLowerCase() === emotion.emotion.toLowerCase()
+      );
+      return matchingCard || { emotion: emotion.emotion };
+    }));
+    
+    // Stop spinning animation gradually
+    const currentRotation = wheelRotation.get();
+    console.log('Stopping wheel at rotation:', currentRotation);
+    
+    await controls.start({
+      rotate: currentRotation + 360,
+      transition: { duration: 2, ease: "easeInOut" },
+    });
+    
+    setIsAnimating(false);
+    
+    // Start the card reading sequence
+    setIsCardReadingOpen(true);
   };
 
   const startSpinSequence = async () => {
     if (isAnimating) return;
+    console.log('Starting spin sequence');
     setIsAnimating(true);
     setHighlightedCards([]);
     setSelectedCards([]);
     setCurrentReadingIndex(0);
 
-    const newRotation = wheelRotation.get() + 1800;
-    await controls.start({
-      rotate: newRotation,
-      transition: { duration: 5, ease: "easeOut" },
-    });
-    wheelRotation.set(newRotation);
+    // Reset rotation to ensure clean animation
+    const currentRotation = wheelRotation.get();
+    console.log('Current rotation before reset:', currentRotation);
+    wheelRotation.set(currentRotation % 360);
 
-    // Randomly select 2-3 cards
-    const numCards = Math.floor(Math.random() * 2) + 2; // Random number between 2 and 3
-    const randomIndices = [];
-    while (randomIndices.length < numCards) {
-      const randomIndex = Math.floor(Math.random() * simulatedEmotionData.length);
-      if (!randomIndices.includes(randomIndex)) {
-        randomIndices.push(randomIndex);
+    // Start continuous spinning
+    const spin = () => {
+      if (!isAnimating) {
+        console.log('Animation stopped');
+        return;
       }
-    }
+      
+      const currentRotation = wheelRotation.get();
+      const newRotation = currentRotation + 360;
+      
+      console.log('Spinning wheel:', { currentRotation, newRotation });
+      
+      controls.start({
+        rotate: newRotation,
+        transition: { duration: 1, ease: "linear" },
+      }).then(() => {
+        wheelRotation.set(newRotation);
+        
+        // Continue spinning if still animating
+        if (isAnimating) {
+          requestAnimationFrame(spin);
+        }
+      }).catch(error => {
+        console.error('Error in spin animation:', error);
+      });
+    };
 
-    const selectedEmotions = randomIndices.map(index => simulatedEmotionData[index]);
-    setSelectedCards(selectedEmotions);
-    setHighlightedCards(randomIndices);
-    setIsAnimating(false);
+    // Start the spin animation
+    spin();
+
+    // For random spin, select cards after 5 seconds
+    setTimeout(() => {
+      // Randomly select 2-3 cards
+      const numCards = Math.floor(Math.random() * 2) + 2; // Random number between 2 and 3
+      const randomIndices = [];
+      while (randomIndices.length < numCards) {
+        const randomIndex = Math.floor(Math.random() * simulatedEmotionData.length);
+        if (!randomIndices.includes(randomIndex)) {
+          randomIndices.push(randomIndex);
+        }
+      }
+
+      const selectedEmotions = randomIndices.map(index => simulatedEmotionData[index]);
+      setSelectedCards(selectedEmotions);
+      setHighlightedCards(randomIndices);
+      
+      // Stop spinning animation gradually
+      const finalRotation = wheelRotation.get();
+      controls.start({
+        rotate: finalRotation + 360,
+        transition: { duration: 2, ease: "easeInOut" },
+      }).then(() => {
+        setIsAnimating(false);
+      });
+    }, 5000);
   };
 
   const handleNextCard = () => {
@@ -265,7 +327,13 @@ function Wheel({ showDialogue = false }) {
 
       <DialogueModal
         isOpen={isDialogueOpen}
-        onClose={() => setIsDialogueOpen(false)}
+        onClose={() => {
+          console.log('Dialogue modal closing, starting spin');
+          // Use the same spin sequence as the Spin & Start button
+          startSpinSequence();
+          // Then close the modal
+          setIsDialogueOpen(false);
+        }}
         onEmotionsAnalyzed={handleEmotionsAnalyzed}
       />
     </>

@@ -30,7 +30,7 @@ const WheelCard = ({ data, index, totalCards, wheelRotation, isHighlighted, onCa
       whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
       whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
     >
-      <EmotionCard emotion={data.emotion} score={data.score} />
+      <EmotionCard emotion={data.emotion} definition={data.definition} />
     </motion.div>
   );
 };

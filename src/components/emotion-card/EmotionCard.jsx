@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { animateEmotion, resetEmotionAnimation } from '../../animations/emotionAnimations';
 import { GratitudeSvg, ApprovalSvg, DisapprovalSvg, CaringSvg, RealizationSvg, OptimismSvg, ReliefSvg, AdmirationSvg, EmbarrassmentSvg, ConfusionSvg, DisappointmentSvg, SadnessSvg, GriefSvg, RemorseSvg, NervousnessSvg, AnnoyanceSvg, DisgustSvg, FearSvg, AngerSvg, SurpriseSvg, DesireSvg, CuriositySvg, PrideSvg, AmusementSvg, JoySvg, ExcitementSvg, LoveSvg } from '../emotion-svgs';
 
-const EmotionCard = ({ emotion, isModal = false }) => {
+const EmotionCard = ({ emotion, definition, isModal = false }) => {
   const svgRef = useRef(null);
 
   useEffect(() => {

@@ -1,8 +1,12 @@
 import { AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 const Summary = ({ isOpen, onClose, cards }) => {
+  const containerRef = useRef(null);
+  const cardsRef = useRef(null);
+  const cardsContainerRef = useRef(null);
+
   useEffect(() => {
     if (isOpen) {
       // Save reading to localStorage
@@ -24,6 +28,32 @@ const Summary = ({ isOpen, onClose, cards }) => {
     }
   }, [isOpen, cards]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (containerRef.current && cardsRef.current && cardsContainerRef.current) {
+        const scrollPosition = containerRef.current.scrollTop;
+        const maxScroll = containerRef.current.scrollHeight - containerRef.current.clientHeight;
+        const scrollPercentage = scrollPosition / maxScroll;
+        
+        // Scale down cards as user scrolls
+        const scale = Math.max(0.5, 1 - (scrollPercentage * 0.5));
+        cardsRef.current.style.transform = `scale(${scale})`;
+        cardsRef.current.style.transition = 'transform 0.2s ease-out';
+
+        // Adjust container heights
+        const cardsContainerHeight = Math.max(100, 300 * (1 - scrollPercentage * 0.7));
+        cardsContainerRef.current.style.height = `${cardsContainerHeight}px`;
+        cardsContainerRef.current.style.transition = 'height 0.2s ease-out';
+      }
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -31,7 +61,7 @@ const Summary = ({ isOpen, onClose, cards }) => {
           className="fixed inset-0 z-[1000] backdrop-blur-md flex items-center justify-center"
         >
           <div
-            className="fixed inset-0 bg-white/40 backdrop-blur flex flex-col p-8"
+            className="fixed inset-0 bg-white backdrop-blur flex flex-col p-8"
           >
             <button
               className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl z-10"
@@ -43,22 +73,34 @@ const Summary = ({ isOpen, onClose, cards }) => {
             <h2 className="text-2xl font-semibold mb-8 text-center">Your Emotion Reading Summary</h2>
 
             {/* Cards Row */}
-            <div className="flex justify-center gap-8 mb-8">
-              {cards.map((card, index) => (
-                <div
-                  key={index}
-                >
-                  <EmotionCard 
-                    emotion={card.emotion} 
-                    score={card.score} 
-                    isModal={true}
-                  />
-                </div>
-              ))}
+            <div 
+              ref={cardsContainerRef}
+              className="flex justify-center gap-8 mb-8 transition-all duration-200"
+              style={{ height: '300px' }}
+            >
+              <div 
+                ref={cardsRef}
+                className="flex justify-center gap-8 transition-transform duration-200"
+              >
+                {cards.map((card, index) => (
+                  <div
+                    key={index}
+                  >
+                    <EmotionCard 
+                      emotion={card.emotion} 
+                      definition={card.definition} 
+                      isModal={true}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Analysis Section */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-4 custom-scrollbar">
+            <div 
+              ref={containerRef}
+              className="flex-1 overflow-y-auto space-y-4 pr-4 custom-scrollbar"
+            >
               <div
                 className="bg-white/60 p-6 rounded-lg"
               >

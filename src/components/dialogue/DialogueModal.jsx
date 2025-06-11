@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, useAnimate, AnimatePresence } from 'framer-motion'
 import { analyzeEmotions } from '../../services/api'
+import { API_BASE_URL } from '../../services/api'
+import { checkMicrophonePermission, startRecording } from '../../utils/speechToText'
 
 const LoadingDots = () => {
   return (
@@ -43,6 +45,29 @@ const SendIcon = () => (
   </svg>
 )
 
+const MicrophoneIcon = () => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className="w-5 h-5"
+  >
+    <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+    <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+  </svg>
+)
+
+const DownloadIcon = () => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className="w-5 h-5"
+  >
+    <path d="M12 15.713L18.01 9.7c.439-.439 1.151-.439 1.59 0s.439 1.151 0 1.59l-6.705 6.705c-.439.439-1.151.439-1.59 0L4.4 11.29c-.439-.439-.439-1.151 0-1.59s1.151-.439 1.59 0L12 15.713z" />
+  </svg>
+)
+
 const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -50,6 +75,10 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const [pendingResponse, setPendingResponse] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [isReadyForSearch, setIsReadyForSearch] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [hasPermission, setHasPermission] = useState(null)
+  const [initialAnalysis, setInitialAnalysis] = useState(null)
+  const mediaRecorderRef = useRef(null)
   const [scope, animate] = useAnimate()
   const containerRef = useRef(null)
 
@@ -64,6 +93,53 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
     }
   }, [isOpen])
 
+  // Check microphone permission on mount
+  useEffect(() => {
+    if (isOpen) {
+      checkMicrophonePermission().then(setHasPermission)
+    }
+  }, [isOpen])
+
+  const handleStartRecording = async () => {
+    try {
+      const recorder = await startRecording(
+        // onInterimResult callback
+        (transcript) => {
+          setInput(transcript)
+        },
+        // onFinalResult callback
+        (transcript) => {
+          setInput(transcript)
+        }
+      )
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+    } catch (error) {
+      console.error('Error starting recording:', error)
+      setMessages(prev => [
+        ...prev,
+        { 
+          sender: 'ai', 
+          text: "I'm sorry, I couldn't access your microphone. Please check your permissions and try again." 
+        }
+      ])
+    }
+  }
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      // Send the final transcript if there's any input
+      if (input.trim()) {
+        const userMessage = { sender: 'user', text: input }
+        setMessages(prev => [...prev, userMessage])
+        setPendingResponse(true)
+        setInput('') // Clear the input box immediately after sending
+      }
+    }
+  }
+
   const scrollToBottom = async () => {
     const container = containerRef.current
     if (container) {
@@ -74,31 +150,48 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   }
 
   const handleSearch = async () => {
-    if (!isReadyForSearch) return;
+    console.log('Search button clicked', { isReadyForSearch, initialAnalysis });
+    if (!isReadyForSearch || !initialAnalysis) return;
     
-    setPendingResponse(true);
     try {
-      const result = await analyzeEmotions(messages[messages.length - 1].text, { execute_search: true }); // trigger excute search
-      console.log('Search Response:', result);
+      console.log('Starting search execution...');
+      console.log('Last user message:', messages[messages.length - 1].text);
       
-      if (result.emotions && result.emotions.length > 0) {
+      // Execute the search using the stored initial analysis
+      const searchResult = await analyzeEmotions(messages[messages.length - 1].text, { 
+        execute_search: true,
+        accumulated_text: initialAnalysis.accumulated_text
+      });
+      console.log('Search Execution Response:', {
+        status: 'success',
+        emotions: searchResult.emotions,
+        guidance_response: searchResult.guidance_response,
+        emotion_analysis: searchResult.emotion_analysis,
+        rag_analysis: searchResult.rag_analysis
+      });
+      
+      if (searchResult.rag_analysis?.enriched_emotion_status) {
+        // Transform the enriched_emotion_status object into an array of emotions
+        const emotions = Object.values(searchResult.rag_analysis.enriched_emotion_status)
+          .map(item => ({ emotion: item.label }));
+        
         if (onEmotionsAnalyzed) {
-          console.log('Passing emotions to parent:', result.emotions);
-          onEmotionsAnalyzed(result.emotions);
+          console.log('Passing emotions to parent:', emotions);
+          onEmotionsAnalyzed(emotions, searchResult);
         }
       }
       
-      if (result.guidance_response) {
-        setMessages(prev => [
-          ...prev,
-          { 
-            sender: 'ai', 
-            text: result.guidance_response
-          }
-        ]);
-      }
+      // Close the modal after search is complete
+      console.log('Closing modal after search');
+      onClose();
     } catch (error) {
-      console.error('Error during search:', error);
+      console.error('Error during search execution:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      // Reopen the modal with error message if search fails
       setMessages(prev => [
         ...prev,
         { 
@@ -109,6 +202,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
     } finally {
       setPendingResponse(false);
       setIsReadyForSearch(false);
+      setInitialAnalysis(null);
     }
   };
 
@@ -131,6 +225,9 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
             const result = await analyzeEmotions(lastUserMessage)
             console.log('API Response:', result)
             
+            // Store the initial analysis
+            setInitialAnalysis(result)
+            
             // Add AI response with only the guidance message
             if (result.guidance_response) {
               setMessages(prev => [
@@ -142,20 +239,13 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
               ])
             }
 
-            // If needs_more_detail is false, we can proceed with the analysis
+            // If needs_more_detail is false, we can enable the search button
             if (!result.needs_more_detail) {
-              console.log('Analysis complete, emotions:', result.emotions)
-              setIsReadyForSearch(true);
-              // Add a message to inform the user they can search
-              setMessages(prev => [
-                ...prev,
-                { 
-                  sender: 'ai', 
-                  text: "I understand your situation. Would you like me to search for similar experiences and provide a detailed analysis?" 
-                }
-              ]);
+              console.log('Analysis complete, ready for search')
+              setIsReadyForSearch(true)
             } else {
               console.log('More details needed for analysis')
+              setIsReadyForSearch(false)
             }
 
             setPendingResponse(false)
@@ -220,7 +310,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
 
       analyzeEmotionsFromText()
     }
-  }, [pendingResponse, messages, onEmotionsAnalyzed])
+  }, [pendingResponse, messages])
 
   // Scroll to bottom when messages change or when pending response changes
   useEffect(() => {
@@ -352,7 +442,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                               initial={{ scale: 0.95 }}
                               animate={{ scale: 1 }}
                               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                              className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 rounded-bl-none w-[80%]"
+                              className="px-4 py-2 text-base text-gray-800 w-[80%]"
                             >
                               {formatMessageText(msg.text)}
                             </motion.div>
@@ -377,7 +467,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                                   initial={{ scale: 0.95 }}
                                   animate={{ scale: 1 }}
                                   transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                  className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 rounded-bl-none w-[80%]"
+                                  className="px-4 py-2 text-lg text-gray-800 w-[80%]"
                                 >
                                   {formatMessageText(msg.text)}
                                 </motion.div>
@@ -398,7 +488,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                           initial={{ scale: 0.95 }}
                           animate={{ scale: 1 }}
                           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                          className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 rounded-bl-none w-[80%]"
+                          className="px-4 py-2 text-base text-gray-800 w-[80%]"
                         >
                           <LoadingDots />
                         </motion.div>
@@ -409,7 +499,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                   <div className="w-[80%] flex flex-col gap-2 mt-4">
                     <div className="relative">
                       <textarea
-                        className="w-full bg-white/60 rounded-lg px-3 py-2 text-base min-h-[200px] resize-none border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none pr-12"
+                        className="w-full bg-white/60 rounded-lg px-3 py-2 text-base min-h-[200px] resize-none border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none pr-24"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -418,17 +508,33 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                             sendMessage()
                           }
                         }}
-                        placeholder="Type your message..."
+                        placeholder={isRecording ? "Listening..." : "Type your message..."}
                       />
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={sendMessage}
-                        className="absolute bottom-3 right-3 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!input.trim()}
-                      >
-                        <SendIcon />
-                      </motion.button>
+                      <div className="absolute bottom-3 right-3 flex gap-2">
+                        {hasPermission && (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={isRecording ? handleStopRecording : handleStartRecording}
+                            className={`p-2 rounded-full ${
+                              isRecording 
+                                ? 'bg-red-500 hover:bg-red-600' 
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            } text-white`}
+                          >
+                            <MicrophoneIcon />
+                          </motion.button>
+                        )}
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={sendMessage}
+                          className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={!input.trim()}
+                        >
+                          <SendIcon />
+                        </motion.button>
+                      </div>
                     </div>
                     
                     {/* Search Button */}
@@ -436,11 +542,14 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={handleSearch}
+                        onClick={() => {
+                          console.log('Search button clicked in JSX');
+                          handleSearch();
+                        }}
                         className="w-full py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={pendingResponse}
                       >
-                        {pendingResponse ? 'Searching...' : 'Start searching for emotions'}
+                        {pendingResponse ? 'Searching...' : 'Search for similar experiences'}
                       </motion.button>
                     )}
 

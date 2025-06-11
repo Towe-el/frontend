@@ -42,15 +42,26 @@ const CardDetailModal = ({ isOpen, onClose, emotionData }) => {
     >
       {/* Backdrop with blur effect */}
       <div 
-        className="absolute inset-0 bg-white bg-opacity-50 backdrop-blur-sm"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0,
+          backgroundColor: emotionData.bgColor || 'rgba(255, 255, 255, 0.5)',
+          opacity: 0.9
+        }}
       />
       
       {/* Modal Content */}
       <div 
-        className="relative z-10 max-w-md w-full mx-4 animate-fadeIn"
+        className="relative z-10 max-w-4xl w-full mx-4 animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
-        style={{ position: 'relative', zIndex: 1000 }}
+        style={{ 
+          position: 'relative', 
+          zIndex: 1000
+        }}
       >
         {/* Close button */}
         <button
@@ -71,13 +82,27 @@ const CardDetailModal = ({ isOpen, onClose, emotionData }) => {
             <path d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        
-        {/* Emotion Card */}
-        <EmotionCard 
-          emotion={emotionData.emotion} 
-          score={emotionData.score} 
-          isModal={true}
-        />
+
+        <div className="flex flex-row items-center justify-center gap-30 p-8">
+          {/* Emotion Card */}
+          <div className="transform scale-150">
+            <EmotionCard
+              emotion={emotionData.emotion} 
+              definition={emotionData.definition}
+              isModal={true}
+            />
+          </div>
+          
+          {/* Emotion definition */}
+          <div className="flex-1">
+            <p 
+              className="text-2xl font-bold leading-relaxed"
+              style={{ color: emotionData.textColor || '#1F2937' }}
+            >
+              {emotionData.definition}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

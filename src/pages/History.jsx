@@ -26,41 +26,6 @@ const History = () => {
     return date.toLocaleString();
   };
 
-  const getKeywords = (emotions) => {
-    const keywords = {
-      happiness: ['Joy', 'Contentment', 'Fulfillment'],
-      joy: ['Delight', 'Pleasure', 'Cheer'],
-      excitement: ['Enthusiasm', 'Eagerness', 'Thrill'],
-      contentment: ['Satisfaction', 'Peace', 'Tranquility'],
-      amusement: ['Entertainment', 'Fun', 'Delight'],
-      love: ['Affection', 'Care', 'Connection'],
-      pride: ['Achievement', 'Confidence', 'Dignity'],
-      optimism: ['Hope', 'Positivity', 'Confidence'],
-      calmness: ['Peace', 'Serenity', 'Composure'],
-      satisfaction: ['Fulfillment', 'Contentment', 'Gratification'],
-      relief: ['Ease', 'Comfort', 'Release'],
-      interest: ['Curiosity', 'Engagement', 'Attention'],
-      anticipation: ['Expectation', 'Eagerness', 'Excitement'],
-      surprise: ['Astonishment', 'Amazement', 'Wonder'],
-      nostalgia: ['Reminiscence', 'Memory', 'Longing'],
-      hope: ['Optimism', 'Faith', 'Aspiration'],
-      anxiety: ['Worry', 'Unease', 'Concern'],
-      confusion: ['Uncertainty', 'Bewilderment', 'Disorientation'],
-      doubt: ['Uncertainty', 'Skepticism', 'Hesitation'],
-      boredom: ['Monotony', 'Tedium', 'Restlessness'],
-      sadness: ['Sorrow', 'Melancholy', 'Grief'],
-      disappointment: ['Letdown', 'Frustration', 'Regret'],
-      embarrassment: ['Shame', 'Humiliation', 'Discomfort'],
-      guilt: ['Remorse', 'Regret', 'Responsibility'],
-      anger: ['Frustration', 'Irritation', 'Rage'],
-      frustration: ['Annoyance', 'Irritation', 'Disappointment'],
-      disgust: ['Revulsion', 'Aversion', 'Repulsion'],
-      fear: ['Anxiety', 'Terror', 'Apprehension']
-    };
-
-    return emotions.flatMap(emotion => keywords[emotion.emotion.toLowerCase()] || []);
-  };
-
   const handleReadingClick = (reading) => {
     setSelectedReading(reading);
     setCurrentReadingIndex(0);
@@ -125,29 +90,24 @@ const History = () => {
                         >
                           <EmotionCard 
                             emotion={card.emotion} 
-                            score={card.score} 
+                            definition={card.definition} 
                             isModal={true}
                           />
                         </div>
                       ))}
                     </div>
 
-                    {/* Right side - Timestamp and Keywords */}
+                    {/* Right side - Timestamp and User Input */}
                     <div className="flex-1 flex flex-col h-full">
                       <h2 className="text-lg font-medium mb-3">
                         Reading from {formatDate(reading.timestamp)}
                       </h2>
                       
                       <div className="flex-1 bg-white/60 p-3 rounded-lg overflow-y-auto custom-scrollbar">
-                        <div className="flex flex-wrap gap-2">
-                          {getKeywords(reading.cards).map((keyword, index) => (
-                            <span 
-                              key={index}
-                              className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
+                        <div className="space-y-2">
+                          <p className="text-gray-700 line-clamp-2">
+                            {reading.userInput || "No user input recorded for this reading."}
+                          </p>
                         </div>
                       </div>
                     </div>

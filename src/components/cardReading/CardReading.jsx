@@ -10,15 +10,15 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
       title: "Primary Emotion",
       content: (
         <>
-          <p className="text-3xl font-bold text-blue-600">{emotionData?.emotion || 'Unknown'}</p>
-          <p className="text-gray-600 mt-2">Confidence: {((emotionData?.score || 0) * 100).toFixed(0)}%</p>
+          <p className="text-3xl font-bold" style={{ color: emotionData?.textColor || '#2563EB' }}>{emotionData?.emotion || 'Unknown'}</p>
+          <p className="text-xl mt-4 leading-relaxed" style={{ color: emotionData?.textColor || '#374151' }}>{emotionData?.definition || 'No definition available'}</p>
         </>
       )
     },
     {
       title: "What This Means",
       content: (
-        <p className="text-gray-700">
+        <p style={{ color: emotionData?.textColor || '#374151' }}>
           This emotion suggests you're experiencing a significant moment of {(emotionData?.emotion || 'emotion').toLowerCase()}. 
           Take a moment to acknowledge this feeling and understand its impact on your current state.
         </p>
@@ -27,7 +27,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
     {
       title: "Suggested Actions",
       content: (
-        <ul className="text-left list-disc list-inside text-gray-700 space-y-2">
+        <ul className="text-left list-disc list-inside space-y-2" style={{ color: emotionData?.textColor || '#374151' }}>
           <li>Take a few deep breaths to center yourself</li>
           <li>Reflect on what triggered this emotion</li>
           <li>Consider sharing your feelings with someone you trust</li>
@@ -38,7 +38,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
     {
       title: "Understanding Your Emotion",
       content: (
-        <p className="text-gray-700">
+        <p style={{ color: emotionData?.textColor || '#374151' }}>
           {emotionData?.emotion || 'This emotion'} is a natural response to your current circumstances. 
           It's important to recognize that this emotion is temporary and can be a valuable 
           source of insight into your needs and values.
@@ -48,7 +48,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
     {
       title: "Moving Forward",
       content: (
-        <p className="text-gray-700">
+        <p style={{ color: emotionData?.textColor || '#374151' }}>
           Remember that emotions are like waves - they come and go. While you're experiencing 
           this {(emotionData?.emotion || 'emotion').toLowerCase()}, try to observe it without judgment. 
           This awareness can help you navigate through this feeling with greater ease.
@@ -91,7 +91,11 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
               damping: 25,
               duration: 0.5
             }}
-            className="fixed inset-0 bg-white/40 backdrop-blur flex"
+            className="fixed inset-0 backdrop-blur flex"
+            style={{ 
+              backgroundColor: emotionData?.bgColor || 'rgba(255, 255, 255, 0.4)',
+              opacity: 0.9
+            }}
           >
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -108,7 +112,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
                 <div className="transform scale-150">
                   <EmotionCard 
                     emotion={emotionData.emotion} 
-                    score={emotionData.score} 
+                    definition={emotionData.definition} 
                     isModal={true}
                   />
                 </div>
@@ -117,7 +121,7 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
 
             {/* Right side - AI Dialogue */}
             <div className="w-2/3 flex flex-col p-8">
-              <h2 className="text-2xl font-semibold mb-6">Your Emotion Reading</h2>
+              <h2 className="text-2xl font-semibold mb-6" style={{ color: emotionData?.textColor || '#1F2937' }}>Your Emotion Reading</h2>
               
               <div 
                 ref={dialogueRef}
@@ -128,9 +132,9 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
                     {readingSteps.map((step, index) => (
                       <div
                         key={index}
-                        className="bg-white/60 p-6 rounded-lg"
+                        className="p-6 rounded-lg"
                       >
-                        <h3 className="text-xl font-medium mb-2">{step.title}</h3>
+                        <h3 className="text-xl font-medium mb-2" style={{ color: emotionData?.textColor || '#1F2937' }}>{step.title}</h3>
                         {step.content}
                       </div>
                     ))}
@@ -144,7 +148,12 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onBackToWheel}
-                  className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                  className="px-6 py-3 rounded-lg font-medium transition-colors"
+                  style={{ 
+                    backgroundColor: emotionData?.textColor || '#6B7280',
+                    color: emotionData?.bgColor || '#FFFFFF',
+                    opacity: 0.5
+                  }}
                 >
                   Back to Wheel
                 </motion.button>
@@ -153,11 +162,12 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleNextCard}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                    isLastCard 
-                      ? 'bg-green-500 hover:bg-green-600 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
+                  className="px-6 py-3 rounded-lg font-medium transition-colors"
+                  style={{ 
+                    backgroundColor: emotionData?.textColor || (isLastCard ? '#10B981' : '#3B82F6'),
+                    color: emotionData?.bgColor || '#FFFFFF',
+                    opacity: 0.8
+                  }}
                 >
                   {isLastCard ? 'Finish Reading' : 'Read Next Card'}
                 </motion.button>

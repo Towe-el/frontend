@@ -28,6 +28,11 @@ function Home() {
     setShowDialogue(true)
   }
 
+  const handleEmotionsAnalyzed = (emotions) => {
+    console.log('Emotions analyzed in Home:', emotions);
+    // The Wheel component will handle the animation and card reading
+  }
+
   return (
     <div className="h-screen w-full overflow-hidden">
       <Navbar />
@@ -42,6 +47,7 @@ function Home() {
       <DialogueModal 
         isOpen={showDialogue}
         onClose={handleCloseDialogue}
+        onEmotionsAnalyzed={handleEmotionsAnalyzed}
       />
       {showAssistant && <Assistant onOpenDialogue={handleOpenDialogue} />}
     </div>

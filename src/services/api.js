@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://toweel-backend-1080725638827.europe-west1.run.app';
+export const API_BASE_URL = 'https://toweel-backend-1080725638827.europe-west1.run.app';
 
 export const analyzeEmotions = async (text, options = {}) => {
   try {
@@ -7,10 +7,13 @@ export const analyzeEmotions = async (text, options = {}) => {
       ...options, // injects optional flags like execute_search
     };
 
-    console.log('Making API request to:', `${API_BASE_URL}/search/`);
+    // Determine the endpoint based on whether this is a search execution
+    const endpoint = options.execute_search ? '/search/execute' : '/search/';
+    
+    console.log('Making API request to:', `${API_BASE_URL}${endpoint}`);
     console.log('Request payload:', payload);
 
-    const response = await fetch(`${API_BASE_URL}/search/`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,7 +41,9 @@ export const analyzeEmotions = async (text, options = {}) => {
       emotions: data.results || [],
       needs_more_detail: data.emotion_analysis?.needs_more_detail || false,
       guidance_response: data.guidance_response || null,
-      emotion_analysis: data.emotion_analysis || null
+      emotion_analysis: data.emotion_analysis || null,
+      accumulated_text: data.accumulated_text || null,
+      rag_analysis: data.rag_analysis || null
     };
 
     console.log('Transformed data:', transformedData);
