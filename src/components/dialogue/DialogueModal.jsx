@@ -150,40 +150,43 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   }
 
   const handleSearch = async () => {
-    console.log('Search button clicked', { isReadyForSearch, initialAnalysis });
     if (!isReadyForSearch || !initialAnalysis) return;
-    
+
+    // Close the modal first
+    onClose();
+
     try {
-      console.log('Starting search execution...');
-      console.log('Last user message:', messages[messages.length - 1].text);
-      
       // Execute the search using the stored initial analysis
-      const searchResult = await analyzeEmotions(messages[messages.length - 1].text, { 
+      const searchResult = await analyzeEmotions(messages[messages.length - 1].text, 
+        initialAnalysis.session_id,
+        {
         execute_search: true,
         accumulated_text: initialAnalysis.accumulated_text
       });
-      console.log('Search Execution Response:', {
-        status: 'success',
-        emotions: searchResult.emotions,
-        guidance_response: searchResult.guidance_response,
-        emotion_analysis: searchResult.emotion_analysis,
-        rag_analysis: searchResult.rag_analysis
-      });
-      
-      if (searchResult.rag_analysis?.enriched_emotion_status) {
+
+      if (searchResult.rag_analysis?.enriched_emotion_stats) {
         // Transform the enriched_emotion_status object into an array of emotions
-        const emotions = Object.values(searchResult.rag_analysis.enriched_emotion_status)
-          .map(item => ({ emotion: item.label }));
-        
+        const emotions = Object.values(searchResult.rag_analysis.enriched_emotion_stats)
+          .map(item => ({
+            emotion: item.label,
+            percentage: item.percentage,
+            count: item.count,
+            analysis: item.analysis,
+            quote: item.quote
+          }));
+
+        console.log('Extracted emotions from enriched_emotion_stats:', emotions);
+
         if (onEmotionsAnalyzed) {
           console.log('Passing emotions to parent:', emotions);
-          onEmotionsAnalyzed(emotions, searchResult);
+          onEmotionsAnalyzed(emotions, searchResult.rag_analysis.summary_report);
         }
+      } else {
+        console.log('No enriched emotion stats found in rag_analysis');
+        console.log('available rag_analysis keys:',
+        searchResult.rag_analysis ?
+        Object.keys(searchResult.rag_analysis): 'rag_analysis is null/undefined.')
       }
-      
-      // Close the modal after search is complete
-      console.log('Closing modal after search');
-      onClose();
     } catch (error) {
       console.error('Error during search execution:', error);
       console.error('Error details:', {

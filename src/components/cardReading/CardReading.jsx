@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
 import { useRef, useEffect } from 'react'
 
-const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }) => {
+const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, summaryReport }) => {
   const dialogueRef = useRef(null);
   
   const readingSteps = [
