@@ -5,6 +5,7 @@ import { motion, useAnimate, AnimatePresence } from 'framer-motion'
 import { analyzeEmotions } from '../../services/api'
 import { API_BASE_URL } from '../../services/api'
 import { checkMicrophonePermission, startRecording } from '../../utils/speechToText'
+import { LoadingAnimation } from '../../animations/LoadingAnimation'
 
 const LoadingDots = () => {
   return (
@@ -78,6 +79,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const [isRecording, setIsRecording] = useState(false)
   const [hasPermission, setHasPermission] = useState(null)
   const [initialAnalysis, setInitialAnalysis] = useState(null)
+  const [isSearching, setIsSearching] = useState(false)
   const mediaRecorderRef = useRef(null)
   const [scope, animate] = useAnimate()
   const containerRef = useRef(null)
@@ -152,10 +154,10 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const handleSearch = async () => {
     if (!isReadyForSearch || !initialAnalysis) return;
 
-    // Close the modal first
-    onClose();
+    setIsSearching(true);
 
     try {
+      console.log('🔍 Starting search with initial analysis:', initialAnalysis);
       // Execute the search using the stored initial analysis
       const searchResult = await analyzeEmotions(messages[messages.length - 1].text, 
         initialAnalysis.session_id,
@@ -163,6 +165,8 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
         execute_search: true,
         accumulated_text: initialAnalysis.accumulated_text
       });
+
+      console.log('✅ Search result received:', searchResult);
 
       if (searchResult.rag_analysis?.enriched_emotion_stats) {
         // Transform the enriched_emotion_status object into an array of emotions
@@ -175,20 +179,28 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
             quote: item.quote
           }));
 
-        console.log('Extracted emotions from enriched_emotion_stats:', emotions);
+        console.log('🎯 Extracted emotions:', emotions);
+        console.log('🎯 Emotions array length:', emotions.length);
+        console.log('🎯 First emotion:', emotions[0]);
 
         if (onEmotionsAnalyzed) {
-          console.log('Passing emotions to parent:', emotions);
-          onEmotionsAnalyzed(emotions, searchResult.rag_analysis.summary_report);
+          console.log('🎯 Calling onEmotionsAnalyzed with emotions:', emotions);
+          onClose();
+          onEmotionsAnalyzed(emotions);
+          console.log('✅ onEmotionsAnalyzed called successfully');
+        } else {
+          console.error('❌ onEmotionsAnalyzed is not defined');
         }
       } else {
-        console.log('No enriched emotion stats found in rag_analysis');
-        console.log('available rag_analysis keys:',
-        searchResult.rag_analysis ?
-        Object.keys(searchResult.rag_analysis): 'rag_analysis is null/undefined.')
+        console.log('❌ No enriched emotion stats found in rag_analysis');
+        console.log('Available rag_analysis keys:', 
+          searchResult.rag_analysis ? 
+          Object.keys(searchResult.rag_analysis) : 
+          'rag_analysis is null/undefined'
+        );
       }
     } catch (error) {
-      console.error('Error during search execution:', error);
+      console.error('❌ Error during search execution:', error);
       console.error('Error details:', {
         message: error.message,
         stack: error.stack,
@@ -206,6 +218,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
       setPendingResponse(false);
       setIsReadyForSearch(false);
       setInitialAnalysis(null);
+      setIsSearching(false);
     }
   };
 
@@ -542,18 +555,26 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                     
                     {/* Search Button */}
                     {isReadyForSearch && (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          console.log('Search button clicked in JSX');
-                          handleSearch();
-                        }}
-                        className="w-full py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={pendingResponse}
-                      >
-                        {pendingResponse ? 'Searching...' : 'Search for similar experiences'}
-                      </motion.button>
+                      <div className="w-full py-3">
+                        {isSearching ? (
+                          <div className="relative h-[60px]">
+                            <LoadingAnimation />
+                          </div>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              console.log('Search button clicked in JSX');
+                              handleSearch();
+                            }}
+                            className="w-full py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={pendingResponse}
+                          >
+                            Search for similar experiences
+                          </motion.button>
+                        )}
+                      </div>
                     )}
 
                     <motion.button

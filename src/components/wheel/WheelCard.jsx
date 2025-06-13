@@ -24,8 +24,22 @@ const WheelCard = ({ data, index, totalCards, wheelRotation, isHighlighted, onCa
         pointerEvents: "auto",
         zIndex: isHighlighted ? 100 : 1,
       }}
-      animate={{ scale: isHighlighted ? 1.2 : 0.9 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      animate={{ 
+        scale: isHighlighted ? 1.2 : 0.9,
+        filter: isHighlighted ? 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.8))' : 'none'
+      }}
+      transition={{ 
+        duration: 0.8, 
+        ease: "easeOut",
+        scale: {
+          duration: 0.5,
+          ease: "easeOut"
+        },
+        filter: {
+          duration: 0.3,
+          ease: "easeInOut"
+        }
+      }}
       onClick={(e) => onCardClick(data, e, index)}
       whileHover={{ scale: isHighlighted ? 1.25 : 1.05 }}
       whileTap={{ scale: isHighlighted ? 1.15 : 0.95 }}
