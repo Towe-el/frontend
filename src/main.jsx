@@ -12,5 +12,5 @@ createRoot(document.getElementById('root')).render(
       <Route path="/info" element={<Info />} />
       <Route path="/history" element={<History />} />
     </Routes>
-  </BrowserRouter>,
+  </BrowserRouter>
 )
