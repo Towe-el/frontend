@@ -23,7 +23,19 @@ const History = () => {
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleString();
+    const options = { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    };
+    const weekdayOptions = { weekday: 'long' };
+    
+    return (
+      <>
+        <div>{date.toLocaleDateString('en-US', options)}</div>
+        <div className="text-gray-500">{date.toLocaleDateString('en-US', weekdayOptions)}</div>
+      </>
+    );
   };
 
   const handleReadingClick = (reading) => {
@@ -54,7 +66,8 @@ const History = () => {
       <Navbar />
       <div className="pt-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-semibold">My Emotions</h1>
             <button
               onClick={() => navigate('/')}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -64,9 +77,8 @@ const History = () => {
               </svg>
               Back to Home
             </button>
-            <h1 className="text-3xl font-semibold text-center">Your Reading History</h1>
-            <div className="w-[120px]"></div> {/* Spacer for balance */}
           </div>
+          <div className="border-b border-black mb-8"></div>
           
           {readings.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">
@@ -77,41 +89,43 @@ const History = () => {
               {readings.map((reading) => (
                 <div
                   key={reading.timestamp}
-                  className="bg-white/40 backdrop-blur rounded-xl p-4 shadow-lg h-[300px] flex flex-col cursor-pointer hover:bg-white/60 transition-colors"
+                  className="bg-white/40 backdrop-blur rounded-xl p-4 h-[300px] flex flex-col cursor-pointer hover:bg-white/60 transition-colors relative"
                   onClick={() => handleReadingClick(reading)}
                 >
                   <div className="flex items-start gap-4 h-full">
-                    {/* Left side - Cards */}
-                    <div className="flex gap-4 items-center">
-                      {reading.cards.map((card, cardIndex) => (
-                        <div
-                          key={cardIndex}
-                          className="transform scale-65 origin-top"
-                        >
-                          <EmotionCard 
-                            emotion={card.emotion} 
-                            definition={card.definition} 
-                            isModal={true}
-                          />
-                        </div>
-                      ))}
+                    {/* Left side - Timestamp */}
+                    <div className="text-lg font-medium">
+                      {formatDate(reading.timestamp)}
                     </div>
-
-                    {/* Right side - Timestamp and User Input */}
-                    <div className="flex-1 flex flex-col h-full">
-                      <h2 className="text-lg font-medium mb-3">
-                        Reading from {formatDate(reading.timestamp)}
-                      </h2>
-                      
-                      <div className="flex-1 bg-white/60 p-3 rounded-lg overflow-y-auto custom-scrollbar">
-                        <div className="space-y-2">
-                          <p className="text-gray-700 line-clamp-2">
-                            {reading.userInput || "No user input recorded for this reading."}
-                          </p>
+                    {/* Right side - Cards and user input */}
+                    <div className="flex-1 flex flex-col items-end">
+                      {/* User input */}
+                      <div className="w-[calc(100%-2rem)] flex flex-col h-full">
+                        <div className="flex-1 bg-white/60 p-3 rounded-lg overflow-y-auto custom-scrollbar">
+                          <div className="space-y-2 text-right">
+                            <p className="text-gray-700 line-clamp-2">
+                              {reading.userInput || "No user input recorded for this reading."}
+                            </p>
+                          </div>
                         </div>
+                      </div>
+                      <div className="flex gap-1 items-center mt-4">
+                        {reading.cards.map((card, cardIndex) => (
+                          <div
+                            key={cardIndex}
+                            className="transform scale-65 origin-top"
+                          >
+                            <EmotionCard 
+                              emotion={card.emotion} 
+                              definition={card.definition} 
+                              isModal={true}
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
+                  <div className="absolute top-6 right-0 h-[1px] bg-black w-2/3"></div>
                 </div>
               ))}
             </div>
@@ -132,6 +146,7 @@ const History = () => {
             isOpen={isSummaryOpen}
             onClose={handleCloseSummary}
             cards={selectedReading.cards}
+            summaryReport={selectedReading.summaryReport}
           />
         </>
       )}

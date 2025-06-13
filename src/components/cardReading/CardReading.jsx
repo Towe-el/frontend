@@ -7,80 +7,44 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, 
   
   const readingSteps = [
     {
-      title: "Primary Emotion",
+      title: "",
       content: (
         <>
-          <p className="text-3xl font-bold" style={{ color: emotionData?.textColor || '#2563EB' }}>{emotionData?.emotion || 'Unknown'}</p>
-          <p className="text-xl mt-4 leading-relaxed" style={{ color: emotionData?.textColor || '#374151' }}>{emotionData?.definition || 'No definition available'}</p>
-          {emotionData?.percentage && (
-            <p className="text-lg mt-2 text-gray-600">
-              Intensity: <span className="font-semibold">{emotionData.percentage}%</span>
+           {emotionData?.percentage && (
+            <p className="text-lg mt-2 text-gray-600"
+            style={{ color: emotionData?.textColor || '#374151' }}>
+              It seems you are experiencing <span className="font-semibold">{Math.floor(emotionData.percentage)}%</span>
+                {emotionData?.emotion}.
             </p>
           )}
-        </>
-      )
-    },
-    {
-      title: "Your Words",
-      content: (
-        <div className="space-y-4">
-          {emotionData?.quote && (
-            <div className="bg-white/30 p-4 rounded-lg">
-              <p className="italic text-lg" style={{ color: emotionData?.textColor || '#374151' }}>
-                "{emotionData.quote}"
-              </p>
-            </div>
-          )}
-          {emotionData?.analysis && (
+          <p className="text-3xl font-bold" style={{ color: emotionData?.textColor || '#2563EB' }}>{emotionData?.emotion || 'Unknown'}</p>
+          <p className="text-xl mt-4 leading-relaxed font-bold" style={{ color: emotionData?.textColor || '#374151' }}>What is {emotionData?.emotion}?</p>
+          <p className="text-xl mt-4 leading-relaxed" style={{ color: emotionData?.textColor || '#374151' }}>
+          {emotionData?.definition || 'No definition available'}</p>
+           {emotionData?.analysis && (
             <div className="mt-4">
               <p className="text-lg" style={{ color: emotionData?.textColor || '#374151' }}>
                 {emotionData.analysis}
               </p>
             </div>
           )}
+        </>
+      )
+    },
+    {
+      title: "You're not alone. A user on Twitter shares similar feelings:",
+      content: (
+        <div className="space-y-4">
+          {emotionData?.quote && (
+            <div className="bg-white/30 p-4 rounded-lg shadow-md">
+              <p className="italic text-lg" style={{ color: emotionData?.textColor || '#374151' }}>
+                "{emotionData.quote}"
+              </p>
+            </div>
+          )}
         </div>
       )
     },
-    {
-      title: "What This Means",
-      content: (
-        <p style={{ color: emotionData?.textColor || '#374151' }}>
-          This emotion suggests you're experiencing a significant moment of {(emotionData?.emotion || 'emotion').toLowerCase()}. 
-          Take a moment to acknowledge this feeling and understand its impact on your current state.
-        </p>
-      )
-    },
-    {
-      title: "Suggested Actions",
-      content: (
-        <ul className="text-left list-disc list-inside space-y-2" style={{ color: emotionData?.textColor || '#374151' }}>
-          <li>Take a few deep breaths to center yourself</li>
-          <li>Reflect on what triggered this emotion</li>
-          <li>Consider sharing your feelings with someone you trust</li>
-          <li>Practice mindfulness or meditation</li>
-        </ul>
-      )
-    },
-    {
-      title: "Understanding Your Emotion",
-      content: (
-        <p style={{ color: emotionData?.textColor || '#374151' }}>
-          {emotionData?.emotion || 'This emotion'} is a natural response to your current circumstances. 
-          It's important to recognize that this emotion is temporary and can be a valuable 
-          source of insight into your needs and values.
-        </p>
-      )
-    },
-    {
-      title: "Moving Forward",
-      content: (
-        <p style={{ color: emotionData?.textColor || '#374151' }}>
-          Remember that emotions are like waves - they come and go. While you're experiencing 
-          this {(emotionData?.emotion || 'emotion').toLowerCase()}, try to observe it without judgment. 
-          This awareness can help you navigate through this feeling with greater ease.
-        </p>
-      )
-    }
   ];
 
   // Auto-scroll to top when modal opens
@@ -135,12 +99,15 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, 
             {/* Left side - Emotion Card */}
             <div className="w-1/3 flex items-center justify-center p-8">
               {emotionData && (
-                <div className="transform scale-150">
+                <div className="transform scale-150 flex flex-col items-center">
                   <EmotionCard 
                     emotion={emotionData.emotion} 
                     definition={emotionData.definition} 
                     isModal={true}
                   />
+                  <p className="text-2xl font-bold mt-4" style={{ color: emotionData?.textColor || '#374151' }}>
+                    {Math.floor(emotionData.percentage)}%
+                  </p>
                 </div>
               )}
             </div>

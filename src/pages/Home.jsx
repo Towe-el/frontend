@@ -29,11 +29,12 @@ function Home() {
     setShowDialogue(true)
   }
 
-  const handleEmotionsAnalyzed = (emotions) => {
+  const handleEmotionsAnalyzed = (emotions, summaryReport) => {
     console.log('Emotions analyzed in Home:', emotions);
+    console.log('Summary report in Home:', summaryReport);
     if (wheelRef.current) {
       console.log('Calling Wheel handleEmotionsAnalyzed');
-      wheelRef.current.handleEmotionsAnalyzed(emotions);
+      wheelRef.current.handleEmotionsAnalyzed(emotions, summaryReport);
     } else {
       console.error('Wheel ref is not available');
     }

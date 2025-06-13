@@ -80,6 +80,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const [hasPermission, setHasPermission] = useState(null)
   const [initialAnalysis, setInitialAnalysis] = useState(null)
   const [isSearching, setIsSearching] = useState(false)
+  const [hasProcessedMessage, setHasProcessedMessage] = useState(false)
   const mediaRecorderRef = useRef(null)
   const [scope, animate] = useAnimate()
   const containerRef = useRef(null)
@@ -179,6 +180,22 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
             quote: item.quote
           }));
 
+        // Generate summary report
+        const summaryReport = {
+          overallAnalysis: [
+            `Based on your input, we've identified ${emotions.length} primary emotions that you're experiencing.`,
+            emotions.map(e => `${e.emotion} (${Math.floor(e.percentage)}%)`).join(', '),
+            'Let\'s explore what these emotions mean for you.'
+          ],
+          keyInsights: emotions.map(e => e.analysis),
+          keyInsightsSummary: 'These emotions suggest a complex emotional state that we can help you navigate.',
+          movingForward: [
+            'Understanding your emotions is the first step towards emotional well-being.',
+            'Consider discussing these feelings with someone you trust.',
+            'Remember that it\'s okay to feel this way, and you\'re not alone in your experience.'
+          ]
+        };
+
         console.log('🎯 Extracted emotions:', emotions);
         console.log('🎯 Emotions array length:', emotions.length);
         console.log('🎯 First emotion:', emotions[0]);
@@ -186,7 +203,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
         if (onEmotionsAnalyzed) {
           console.log('🎯 Calling onEmotionsAnalyzed with emotions:', emotions);
           onClose();
-          onEmotionsAnalyzed(emotions);
+          onEmotionsAnalyzed(emotions, summaryReport);
           console.log('✅ onEmotionsAnalyzed called successfully');
         } else {
           console.error('❌ onEmotionsAnalyzed is not defined');
@@ -224,7 +241,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
 
   // Handle AI response and emotion analysis
   useEffect(() => {
-    if (pendingResponse) {
+    if (pendingResponse && !hasProcessedMessage) {
       const analyzeEmotionsFromText = async () => {
         const maxRetries = 3;
         const baseDelay = 1000; // 1 second
@@ -265,6 +282,9 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
               // If we need more details, we don't want to trigger search
               setPendingResponse(false)
             }
+
+            // Mark this message as processed
+            setHasProcessedMessage(true)
 
           } catch (error) {
             console.error('Error analyzing emotions:', error)
@@ -318,6 +338,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
               ])
             }
             setPendingResponse(false)
+            setHasProcessedMessage(true)
           }
         };
 
@@ -327,7 +348,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
 
       analyzeEmotionsFromText()
     }
-  }, [pendingResponse, messages])
+  }, [pendingResponse, messages, hasProcessedMessage])
 
   // Scroll to bottom when messages change or when pending response changes
   useEffect(() => {
@@ -376,6 +397,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setPendingResponse(true)
+    setHasProcessedMessage(false)  // Reset the processed flag when sending a new message
   }
 
   return (

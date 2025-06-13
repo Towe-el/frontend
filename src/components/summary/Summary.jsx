@@ -3,7 +3,7 @@ import EmotionCard from '../emotion-card/EmotionCard'
 import { useEffect, useRef } from 'react'
 import { generateEmotionSummaryPDF } from '../../utils/pdfGenerator'
 
-const Summary = ({ isOpen, onClose, cards }) => {
+const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -14,7 +14,8 @@ const Summary = ({ isOpen, onClose, cards }) => {
       
       const newReading = {
         timestamp: Date.now(),
-        cards: cards
+        cards: cards,
+        summaryReport: summaryReport
       };
       
       // Add new reading to the beginning of the array
@@ -25,7 +26,7 @@ const Summary = ({ isOpen, onClose, cards }) => {
       
       localStorage.setItem('emotionReadings', JSON.stringify(trimmedReadings));
     }
-  }, [isOpen, cards]);
+  }, [isOpen, cards, summaryReport]);
 
   const handleNavClick = (e, id) => {
     e.preventDefault();
@@ -113,89 +114,34 @@ const Summary = ({ isOpen, onClose, cards }) => {
                     <div className="space-y-4">
                       <div id="overall-analysis" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
                         <h3 className="text-xl font-medium mb-4">Overall Analysis</h3>
-                        <p className="text-gray-700 mb-4">
-                          Your emotional journey reveals a complex interplay of feelings. The combination of{' '}
-                          {cards.map((card, index) => (
-                            <span key={index}>
-                              {index === cards.length - 1 ? ' and ' : index > 0 ? ', ' : ''}
-                              <span className="font-semibold">{card.emotion.toLowerCase()}</span>
-                            </span>
-                          ))} suggests a rich emotional landscape.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          These emotions together indicate a period of significant personal growth and self-awareness. 
-                          Each emotion contributes to your current state, creating a unique emotional signature.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          The depth of your emotional experience shows a remarkable capacity for self-reflection and 
-                          emotional intelligence. This combination of feelings often emerges during periods of 
-                          transformation and personal development.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          Understanding these emotions in context can provide valuable insights into your current 
-                          life situation and help guide your future decisions. Each emotion serves a specific 
-                          purpose in your psychological well-being.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          The way these emotions interact with each other creates a unique emotional ecosystem 
-                          that influences your thoughts, behaviors, and relationships. This emotional complexity 
-                          is a sign of a rich inner life and emotional maturity.
-                        </p>
+                        {summaryReport?.overallAnalysis?.map((paragraph, index) => (
+                          <p key={index} className="text-gray-700 mb-4">
+                            {paragraph}
+                          </p>
+                        ))}
                       </div>
 
                       <div id="key-insights" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
                         <h3 className="text-xl font-medium mb-4">Key Insights</h3>
                         <ul className="list-disc list-inside text-gray-700 space-y-2">
-                          <li>Your emotions are interconnected and influence each other in complex ways</li>
-                          <li>There's a balance between different emotional states that contributes to your overall well-being</li>
-                          <li>These feelings provide valuable insights into your current life situation</li>
-                          <li>Each emotion serves a purpose in your emotional well-being</li>
-                          <li>The intensity of your emotions indicates a deep capacity for feeling and understanding</li>
-                          <li>Your emotional responses show a pattern of growth and self-awareness</li>
-                          <li>The combination of these emotions suggests a period of significant personal development</li>
-                          <li>Your emotional landscape reflects both immediate reactions and deeper psychological patterns</li>
-                          <li>These feelings can serve as valuable guides for future decision-making</li>
-                          <li>The way you experience these emotions shows a sophisticated emotional intelligence</li>
+                          {summaryReport?.keyInsights?.map((insight, index) => (
+                            <li key={index}>{insight}</li>
+                          ))}
                         </ul>
-                        <p className="text-gray-700 mt-4">
-                          These insights can help you better understand your emotional patterns and use them 
-                          to enhance your personal growth and relationships. Each insight builds upon the others 
-                          to create a comprehensive picture of your emotional state.
-                        </p>
+                        {summaryReport?.keyInsightsSummary && (
+                          <p className="text-gray-700 mt-4">
+                            {summaryReport.keyInsightsSummary}
+                          </p>
+                        )}
                       </div>
 
                       <div id="moving-forward" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
                         <h3 className="text-xl font-medium mb-4">Moving Forward</h3>
-                        <p className="text-gray-700 mb-4">
-                          Consider how these emotions work together in your life. They can guide you toward 
-                          greater self-understanding and emotional balance. Remember that each emotion is 
-                          temporary and serves a purpose in your journey.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          As you move forward, use these emotional insights to inform your decisions and 
-                          relationships. The awareness you've gained can help you navigate future challenges 
-                          with greater clarity and emotional intelligence.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          Your emotional journey is unique to you, and these feelings are valuable tools 
-                          for personal growth. Embrace them as part of your ongoing development and use 
-                          them to build stronger connections with others.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          Remember that emotional awareness is a skill that can be developed and refined 
-                          over time. Each experience contributes to your emotional intelligence and helps 
-                          you better understand yourself and others.
-                        </p>
-                        <p className="text-gray-700 mb-4">
-                          The combination of emotions you're experiencing suggests a period of significant 
-                          personal growth. Use this opportunity to reflect on your values, goals, and 
-                          relationships, and consider how these emotions can guide your next steps.
-                        </p>
-                        <p className="text-gray-700">
-                          As you continue your journey, remember that emotional balance is not about 
-                          eliminating difficult emotions, but about understanding and working with them 
-                          in a way that promotes growth and well-being.
-                        </p>
+                        {summaryReport?.movingForward?.map((paragraph, index) => (
+                          <p key={index} className="text-gray-700 mb-4">
+                            {paragraph}
+                          </p>
+                        ))}
                       </div>
                     </div>
 
