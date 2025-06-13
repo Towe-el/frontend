@@ -255,16 +255,17 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
               ])
             }
 
-            // If needs_more_detail is false, we can enable the search button
+            // Only enable search if needs_more_detail is false
             if (!result.needs_more_detail) {
               console.log('Analysis complete, ready for search')
               setIsReadyForSearch(true)
             } else {
               console.log('More details needed for analysis')
               setIsReadyForSearch(false)
+              // If we need more details, we don't want to trigger search
+              setPendingResponse(false)
             }
 
-            setPendingResponse(false)
           } catch (error) {
             console.error('Error analyzing emotions:', error)
             console.error('Error details:', {

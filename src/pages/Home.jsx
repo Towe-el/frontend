@@ -31,7 +31,6 @@ function Home() {
 
   const handleEmotionsAnalyzed = (emotions) => {
     console.log('Emotions analyzed in Home:', emotions);
-    // Call the Wheel's handleEmotionsAnalyzed through the ref
     if (wheelRef.current) {
       console.log('Calling Wheel handleEmotionsAnalyzed');
       wheelRef.current.handleEmotionsAnalyzed(emotions);
@@ -41,19 +40,27 @@ function Home() {
   }
 
   return (
-    <div className="h-screen w-full overflow-hidden">
+    <div className="h-screen w-full overflow-x-hidden">
       <Navbar />
-      <div className="h-[calc(100vh-64px)] w-full">
-        <Wheel
-          ref={wheelRef}
-          showDialogue={false}
-        />
+      <div className="relative">
+        {/* Intro Section */}
+        <div className={`h-screen w-full transition-transform duration-500 ${showIntro ? 'translate-y-0' : '-translate-y-full'}`}>
+          <ProductIntroModal 
+            isOpen={showIntro}
+            onGetStarted={handleGetStarted}
+            onExplore={handleExplore}
+          />
+        </div>
+        
+        {/* Wheel Section */}
+        <div className="h-screen w-full">
+          <Wheel
+            ref={wheelRef}
+            showDialogue={false}
+          />
+        </div>
       </div>
-      <ProductIntroModal 
-        isOpen={showIntro}
-        onGetStarted={handleGetStarted}
-        onExplore={handleExplore}
-      />
+      
       <DialogueModal 
         isOpen={showDialogue}
         onClose={handleCloseDialogue}

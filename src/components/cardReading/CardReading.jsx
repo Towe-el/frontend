@@ -12,7 +12,33 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, 
         <>
           <p className="text-3xl font-bold" style={{ color: emotionData?.textColor || '#2563EB' }}>{emotionData?.emotion || 'Unknown'}</p>
           <p className="text-xl mt-4 leading-relaxed" style={{ color: emotionData?.textColor || '#374151' }}>{emotionData?.definition || 'No definition available'}</p>
+          {emotionData?.percentage && (
+            <p className="text-lg mt-2 text-gray-600">
+              Intensity: <span className="font-semibold">{emotionData.percentage}%</span>
+            </p>
+          )}
         </>
+      )
+    },
+    {
+      title: "Your Words",
+      content: (
+        <div className="space-y-4">
+          {emotionData?.quote && (
+            <div className="bg-white/30 p-4 rounded-lg">
+              <p className="italic text-lg" style={{ color: emotionData?.textColor || '#374151' }}>
+                "{emotionData.quote}"
+              </p>
+            </div>
+          )}
+          {emotionData?.analysis && (
+            <div className="mt-4">
+              <p className="text-lg" style={{ color: emotionData?.textColor || '#374151' }}>
+                {emotionData.analysis}
+              </p>
+            </div>
+          )}
+        </div>
       )
     },
     {

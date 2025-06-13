@@ -154,18 +154,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
     setIsCardReadingOpen(false);
   };
 
-  const testAnimation = async () => {
-    const currentRotation = wheelRotation.get();
-    try {
-      await animate(wheelRotation, currentRotation + 360, {
-        duration: 2,
-        ease: 'easeInOut'
-      });
-    } catch (error) {
-      console.error('Test animation error:', error);
-    }
-  };
-
   return (
     <>
       <style>{`
@@ -186,15 +174,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
       `}</style>
 
       <div className={`min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4 ${isModalOpen ? 'hidden' : 'block'}`}>
-        <div className="absolute top-4 left-4 z-50 flex flex-col gap-2">
-          <button 
-            onClick={testAnimation}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Test Animation
-          </button>
-        </div>
-
         <div className="relative w-full h-screen">
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             <motion.div

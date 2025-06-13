@@ -22,7 +22,7 @@ export const analyzeEmotions = async (text, sessionId, options = {}) => {
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Origin': 'http://localhost:5173'
+      'Origin': window.location.origin
     };
 
     // Only add session-id header if we have one AND it's needed
