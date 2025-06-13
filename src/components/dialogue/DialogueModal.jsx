@@ -7,7 +7,7 @@ import { API_BASE_URL } from '../../services/api'
 import { checkMicrophonePermission, startRecording } from '../../utils/speechToText'
 import { LoadingAnimation } from '../../animations/LoadingAnimation'
 import ReadyModal from './ReadyModal'
-import LogoImage1 from '../../assets/LogoImage1.png'
+import LogoImage2 from '../../assets/LogoImage2.png'
 
 const LoadingDots = () => {
   return (
@@ -267,7 +267,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
             }
 
             // client-side check for input quality
-            const isSufficientText = result.accumulated_text && result.accumulated_text.trim().split(/\s+/).length >= 20;
+            const isSufficientText = result.accumulated_text && result.accumulated_text.trim().split(/\s+/).length >= 30;
 
             if (
               result.needs_more_detail === false &&
@@ -394,12 +394,14 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
               ref={scope}
             >
               <div className="flex justify-between items-center p-4">
-                <h2 className="text-lg font-semibold">Talk to Toweel</h2>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="text-gray-500 hover:text-black text-xl"
-                  onClick={onClose}
+                  className="text-gray-500 hover:text-black text-5xl m-8"
+                  onClick={() => {
+                    onClose();
+                    setTimeout(scrollToWheel, 100);
+                  }}
                 >
                   ×
                 </motion.button>
@@ -451,7 +453,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                                 initial={{ scale: 0.95 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                className="px-4 py-2 text-base text-gray-800 w-[80%]"
+                                className="px-4 py-2 text-base text-gray-800 w-full"
                               >
                                 {formatMessageText(msg.text)}
                               </motion.div>
@@ -469,13 +471,13 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ duration: 0.3 }}
-                                  className="flex flex-col items-center w-full mb-3"
+                                  className="flex flex-col items-start w-full mb-6"
                                 >
                                   {idx === 0 && (
                                     <motion.img
-                                      src={LogoImage1}
+                                      src={LogoImage2}
                                       alt="Toweel Logo"
-                                      className="w-64 h-32 mb-4"
+                                      className="w-126 h-44 mb-4 pl-35"
                                       initial={{ scale: 0.8, opacity: 0 }}
                                       animate={{ scale: 1, opacity: 1 }}
                                       transition={{ duration: 0.5 }}
@@ -485,7 +487,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                                     initial={{ scale: 0.95 }}
                                     animate={{ scale: 1 }}
                                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                    className="px-4 py-2 text-lg text-gray-800 w-[80%]"
+                                    className="px-4 py-2 text-xl font-semibold text-gray-800 w-full"
                                   >
                                     {formatMessageText(msg.text)}
                                   </motion.div>

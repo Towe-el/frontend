@@ -46,7 +46,7 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
         console.error('❌ Invalid emotions data received:', emotions);
         return;
       }
-      
+
       console.log('🔍 Starting emotion processing...');
       const indices = emotions.map(emotion => {
         console.log('🔍 Processing emotion:', emotion);
