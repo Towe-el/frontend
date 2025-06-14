@@ -18,6 +18,20 @@ const BackIcon = () => (
 const ReadyModal = ({ isOpen, onClose, onSearch }) => {
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleSpinClick = async () => {
+    setIsLoading(true);
+    try {
+      // Call onSearch but don't close modal yet
+      await onSearch();
+      // Keep loading state until wheel animation completes
+      // The modal will be closed by the parent component after wheel animation
+    } catch (error) {
+      console.error('Error during search:', error);
+      setIsLoading(false);
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -70,18 +84,13 @@ const ReadyModal = ({ isOpen, onClose, onSearch }) => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={async()=>{
-                  setIsLoading(true);
-                  await onSearch();
-                  setIsLoading(false);
-                  onClose();
-                }}
+                onClick={handleSpinClick}
                 disabled={isLoading}
                 className="w-full py-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors disabled:opacity-50"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <LoadingAnimation /> Spinning...
+                    <LoadingAnimation /> Analyzing your emotions...
                   </div>
                 ) : (
                   "Spin the Wheel"

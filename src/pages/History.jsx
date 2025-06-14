@@ -103,9 +103,15 @@ const History = () => {
                       <div className="w-[calc(100%-2rem)] flex flex-col h-full">
                         <div className="flex-1 bg-white/60 p-3 rounded-lg overflow-y-auto custom-scrollbar">
                           <div className="space-y-2 text-right">
-                            <p className="text-gray-700 line-clamp-2">
-                              {reading.userInput || "No user input recorded for this reading."}
-                            </p>
+                            {reading.summaryReport?.keyInsightsSummary ? (
+                              <p className="text-gray-700 line-clamp-3">
+                                {reading.summaryReport.keyInsightsSummary.split('\n\n')[0]}
+                              </p>
+                            ) : (
+                              <p className="text-gray-700 line-clamp-2">
+                                {reading.userInput || "No user input recorded for this reading."}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -6,39 +6,48 @@ import DialogueModal from '../components/dialogue/DialogueModal'
 import Assistant from '../components/assistant/Assistant'
 
 function Home() {
-  const [showIntro, setShowIntro] = useState(true)
-  const [showDialogue, setShowDialogue] = useState(false)
-  const [showAssistant, setShowAssistant] = useState(false)
+  const [showIntro, setShowIntro] = useState(true);
+  const [showDialogue, setShowDialogue] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
+  const [emotionData, setEmotionData] = useState(null);
+  const [summaryData, setSummaryData] = useState(null);
   const wheelRef = useRef();
 
   const handleGetStarted = () => {
-    setShowIntro(false)
-    setShowDialogue(true)
-  }
+    setShowIntro(false);
+    setShowDialogue(true);
+  };
 
   const handleExplore = () => {
-    setShowIntro(false)
-    setShowAssistant(true)
-  }
+    setShowIntro(false);
+    setShowAssistant(true);
+  };
 
   const handleCloseDialogue = () => {
-    setShowDialogue(false)
-  }
+    setShowDialogue(false);
+  };
 
   const handleOpenDialogue = () => {
-    setShowDialogue(true)
-  }
+    setShowDialogue(true);
+  };
 
   const handleEmotionsAnalyzed = (emotions, summaryReport) => {
+    setEmotionData(emotions);
+    setSummaryData(summaryReport);
+
     console.log('Emotions analyzed in Home:', emotions);
     console.log('Summary report in Home:', summaryReport);
-    if (wheelRef.current) {
-      console.log('Calling Wheel handleEmotionsAnalyzed');
-      wheelRef.current.handleEmotionsAnalyzed(emotions, summaryReport);
-    } else {
-      console.error('Wheel ref is not available');
-    }
-  }
+
+    // Scroll to wheel
+    setTimeout(() => {
+      if (wheelRef.current) {
+        console.log('📌 Scrolling to wheel');
+        wheelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        console.warn('⚠️ Cannot scroll: wheelRef is not attached.');
+      }
+    }, 300);
+  };
 
   return (
     <div className="h-screen w-full overflow-x-hidden">
@@ -54,22 +63,23 @@ function Home() {
         </div>
         
         {/* Wheel Section */}
-        <div className="h-screen w-full">
+        <div className="h-screen w-full" ref={wheelRef}>
           <Wheel
-            ref={wheelRef}
+            emotions={emotionData}
+            summary={summaryData}
             showDialogue={false}
           />
         </div>
       </div>
       
-      <DialogueModal 
+      <DialogueModal
         isOpen={showDialogue}
         onClose={handleCloseDialogue}
         onEmotionsAnalyzed={handleEmotionsAnalyzed}
       />
       {showAssistant && <Assistant onOpenDialogue={handleOpenDialogue} />}
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;

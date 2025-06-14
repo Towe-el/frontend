@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
 import { useAnimation, useMotionValue, motion, animate } from 'framer-motion';
 import CardDetailModal from '../emotion-card/CardDetailModal';
 import CardReading from '../cardReading/CardReading';
@@ -19,11 +19,130 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [currentReadingIndex, setCurrentReadingIndex] = useState(0);
   const [isDialogueOpen, setIsDialogueOpen] = useState(showDialogue);
+  const [pendingAnimation, setPendingAnimation] = useState(null);
+  const [pendingHighlightedCards, setPendingHighlightedCards] = useState([]);
+  const [currentSummaryReport, setCurrentSummaryReport] = useState(null);
 
   const wheelRotation = useMotionValue(0);
   const controls = useAnimation();
   const containerRef = useRef();
   const lastAngle = useRef(null);
+
+  // Effect to handle the animation when returning to wheel
+  useEffect(() => {
+    const executeAnimation = async () => {
+      console.log('🔄 Effect triggered with states:', {
+        hasPendingAnimation: !!pendingAnimation,
+        isModalOpen,
+        isCardReadingOpen,
+        isSummaryOpen
+      });
+
+      if (pendingAnimation && !isModalOpen && !isCardReadingOpen && !isSummaryOpen) {
+        // Scroll to wheel first
+        const wheelSection = document.querySelector('.wheel-container');
+        if (wheelSection) {
+          console.log('📌 Scrolling to wheel');
+          wheelSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Wait for scroll to complete before starting animation
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        console.log('🎬 Starting wheel animation...');
+        const currentRotation = wheelRotation.get();
+        console.log('🎬 Current rotation:', currentRotation);
+        
+        // Animate the wheel rotation
+        console.log('🎬 About to start animation...');
+        const animation = animate(wheelRotation, currentRotation + 360, {
+          duration: 2,
+          ease: 'easeInOut',
+          onUpdate: (latest) => {
+            console.log('🎬 Animation update:', latest);
+          },
+          onComplete: () => {
+            console.log('✅ Wheel animation completed');
+            // Wait a bit before highlighting cards
+            setTimeout(() => {
+              console.log('🌟 Setting highlighted cards:', pendingAnimation.indices);
+              setHighlightedCards(pendingAnimation.indices);
+              console.log('✅ All states updated');
+            }, 500);
+          }
+        });
+        
+        await animation;
+        console.log('✅ Animation promise resolved');
+        setPendingAnimation(null);
+      } else {
+        console.log('⏳ Waiting for conditions to be met:', {
+          pendingAnimation: pendingAnimation ? 'exists' : 'null',
+          isModalOpen,
+          isCardReadingOpen,
+          isSummaryOpen
+        });
+      }
+    };
+
+    executeAnimation();
+  }, [pendingAnimation, isModalOpen, isCardReadingOpen, isSummaryOpen]);
+
+  // Expose handleEmotionsAnalyzed through the ref
+  useImperativeHandle(ref, () => ({
+    handleEmotionsAnalyzed
+  }));
+
+  const getAngleFromCenter = (x, y, centerX, centerY) => {
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const radians = Math.atan2(dy, dx);
+    return radians * (180 / Math.PI);
+  };
+
+  const handleCardClick = (emotionData, event, index) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (highlightedCards.includes(index)) {
+      setSelectedEmotion(emotionData);
+      setCurrentReadingIndex(selectedCards.findIndex(card => card.emotion === emotionData.emotion));
+      setIsCardReadingOpen(true);
+    } else {
+      setSelectedEmotion(emotionData);
+      setIsModalOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEmotion(null);
+  };
+
+  const handleNextCard = () => {
+    if (currentReadingIndex < selectedCards.length - 1) {
+      setCurrentReadingIndex(prev => prev + 1);
+    } else {
+      setIsCardReadingOpen(false);
+      setIsSummaryOpen(true);
+    }
+  };
+
+  const handleCloseSummary = () => {
+    setIsSummaryOpen(false);
+    setCurrentReadingIndex(0);
+    setSelectedCards([]);
+    setHighlightedCards([]);
+    setCurrentSummaryReport(null);
+  };
+
+  const handleBackToWheel = () => {
+    const currentCard = selectedCards[currentReadingIndex];
+    const currentCardIndex = simulatedEmotionData.findIndex(
+      card => card.emotion === currentCard.emotion
+    );
+    setHighlightedCards(prev => prev.filter(index => index !== currentCardIndex));
+    setIsCardReadingOpen(false);
+  };
 
   // Function to handle emotions analysis
   const handleEmotionsAnalyzed = async (emotions, summaryReport) => {
@@ -31,11 +150,8 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
       console.log('🎯 Wheel received emotions:', emotions);
       console.log('🎯 Wheel received summary report:', summaryReport);
       
-      // Update selected cards with emotions and summary report
-      setSelectedCards(emotions.map(emotion => ({
-        ...emotion,
-        summaryReport
-      })));
+      // Store the summary report separately
+      setCurrentSummaryReport(summaryReport);
       
       console.log('🎯 Emotions type:', typeof emotions);
       console.log('🎯 Emotions is array:', Array.isArray(emotions));
@@ -84,20 +200,15 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
       console.log('✅ Selected cards prepared:', newSelectedCards);
       setSelectedCards(newSelectedCards);
 
-      console.log('🎬 Starting wheel animation...');
-      const currentRotation = wheelRotation.get();
-      console.log('🎬 Current rotation:', currentRotation);
-      
-      await animate(wheelRotation, currentRotation + 360, {
-        duration: 2,
-        ease: 'easeInOut'
+      // Store the animation data instead of executing it immediately
+      console.log('📦 Storing animation data:', { indices, newSelectedCards });
+      setPendingAnimation({
+        indices,
+        newSelectedCards
       });
-      console.log('✅ Wheel animation completed');
+      setPendingHighlightedCards(indices);
+      console.log('✅ Animation data stored');
 
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log('🌟 Setting highlighted cards:', indices);
-      setHighlightedCards(indices);
-      console.log('✅ All states updated');
     } catch (error) {
       console.error('❌ Error during emotion analysis:', error);
       console.error('Error details:', {
@@ -105,61 +216,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
         stack: error.stack
       });
     }
-  };
-
-  // Expose handleEmotionsAnalyzed through the ref
-  useImperativeHandle(ref, () => ({
-    handleEmotionsAnalyzed
-  }));
-
-  const getAngleFromCenter = (x, y, centerX, centerY) => {
-    const dx = x - centerX;
-    const dy = y - centerY;
-    const radians = Math.atan2(dy, dx);
-    return radians * (180 / Math.PI);
-  };
-
-  const handleCardClick = (emotionData, event, index) => {
-    event?.preventDefault();
-    event?.stopPropagation();
-    if (highlightedCards.includes(index)) {
-      setSelectedEmotion(emotionData);
-      setCurrentReadingIndex(selectedCards.findIndex(card => card.emotion === emotionData.emotion));
-      setIsCardReadingOpen(true);
-    } else {
-      setSelectedEmotion(emotionData);
-      setIsModalOpen(true);
-    }
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedEmotion(null);
-  };
-
-  const handleNextCard = () => {
-    if (currentReadingIndex < selectedCards.length - 1) {
-      setCurrentReadingIndex(prev => prev + 1);
-    } else {
-      setIsCardReadingOpen(false);
-      setIsSummaryOpen(true);
-    }
-  };
-
-  const handleCloseSummary = () => {
-    setIsSummaryOpen(false);
-    setCurrentReadingIndex(0);
-    setSelectedCards([]);
-    setHighlightedCards([]);
-  };
-
-  const handleBackToWheel = () => {
-    const currentCard = selectedCards[currentReadingIndex];
-    const currentCardIndex = simulatedEmotionData.findIndex(
-      card => card.emotion === currentCard.emotion
-    );
-    setHighlightedCards(prev => prev.filter(index => index !== currentCardIndex));
-    setIsCardReadingOpen(false);
   };
 
   return (
@@ -271,7 +327,7 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
         isOpen={isSummaryOpen}
         onClose={handleCloseSummary}
         cards={selectedCards}
-        summaryReport={selectedCards.summaryReport}
+        summaryReport={currentSummaryReport}
       />
 
       <DialogueModal

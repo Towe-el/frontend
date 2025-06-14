@@ -80,6 +80,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   const [hasProcessedMessage, setHasProcessedMessage] = useState(false)
   const [needsMoreDetail, setNeedsMoreDetail] = useState(false)
   const [showReadyModal, setShowReadyModal] = useState(false)
+  const [sessionId, setSessionId] = useState(null);
   const mediaRecorderRef = useRef(null)
   const [scope, animate] = useAnimate()
   const containerRef = useRef(null)
@@ -89,7 +90,21 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
     if (isOpen) {
       setMessages([])
       setInput('')
-      setPendingResponse(false)
+      setPendingResponse(false);
+      setSessionId(null);
+
+      // Fetch session_id from new API
+    fetch(`${API_BASE_URL}/search/session`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.session_id){
+          console.log('📦 New session ID:', data.session_id);
+          setSessionId(data.session_id);
+        }
+      })
+      .catch(err => {
+        console.error('❌ Failed to get session ID', err);
+      });
     }
   }, [isOpen])
 
@@ -150,13 +165,15 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
   }
 
   const handleSearch = async () => {
-    if (!initialAnalysis) return;
+    if (!sessionId || !initialAnalysis){
+      console.warn('❌ Cannot run search: missing sessionId or analysis');
+      return;
+    };
 
     try {
-      console.log('🔍 Starting search with initial analysis:', initialAnalysis);
-      // Execute the search using the stored initial analysis
+      console.log('🔍 Starting search with session id:', sessionId);
       const searchResult = await analyzeEmotions(messages[messages.length - 1].text, 
-        initialAnalysis.session_id,
+        sessionId,
         {
         execute_search: true,
         accumulated_text: initialAnalysis.accumulated_text
@@ -165,15 +182,14 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
       console.log('✅ Search result received:', searchResult);
 
       if (searchResult.rag_analysis?.enriched_emotion_stats) {
-        // Transform the enriched_emotion_status object into an array of emotions
-        const emotions = Object.values(searchResult.rag_analysis.enriched_emotion_stats)
-          .map(item => ({
-            emotion: item.label,
-            percentage: item.percentage,
-            count: item.count,
-            analysis: item.analysis,
-            quote: item.quote
-          }));
+        // Transform the enriched_emotion_stats array into the expected format
+        const emotions = searchResult.rag_analysis.enriched_emotion_stats.map(item => ({
+          emotion: item.label || item.emotion,
+          percentage: item.percentage || 0,
+          count: item.count || 0,
+          analysis: item.analysis || '',
+          quote: item.quote || ''
+        }));
 
         // Generate summary report
         const summaryReport = {
@@ -183,7 +199,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
             'Let\'s explore what these emotions mean for you.'
           ],
           keyInsights: emotions.map(e => e.analysis),
-          keyInsightsSummary: 'These emotions suggest a complex emotional state that we can help you navigate.',
+          keyInsightsSummary: searchResult.rag_analysis.summary_report || 'These emotions suggest a complex emotional state that we can help you navigate.',
           movingForward: [
             'Understanding your emotions is the first step towards emotional well-being.',
             'Consider discussing these feelings with someone you trust.',
@@ -191,13 +207,17 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
           ]
         };
 
+        console.log('✅ Processed emotions:', emotions);
+        console.log('✅ Processed summary report:', summaryReport);
+
         if (onEmotionsAnalyzed) {
           console.log('🎯 Calling onEmotionsAnalyzed with emotions:', emotions);
-          onEmotionsAnalyzed(emotions, summaryReport);
+          await onEmotionsAnalyzed(emotions, summaryReport);
           console.log('✅ onEmotionsAnalyzed called successfully');
-          setShowReadyModal(true);
+          setShowReadyModal(false);
+          onClose();
         } else {
-          console.error('❌ onEmotionsAnalyzed is not defined');
+          console.warn('❌ onEmotionsAnalyzed callback not defined');
         }
       } else {
         console.log('❌ No enriched emotion stats found in rag_analysis');
@@ -214,7 +234,6 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
         stack: error.stack,
         response: error.response
       });
-      // Reopen the modal with error message if search fails
       setMessages(prev => [
         ...prev,
         { 
@@ -237,90 +256,72 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
 
   // Handle AI response and emotion analysis
   useEffect(() => {
-    if (pendingResponse && !hasProcessedMessage) {
+    if (!pendingResponse || hasProcessedMessage || !sessionId) return;
       const analyzeEmotionsFromText = async () => {
-        const maxRetries = 3;
-        const baseDelay = 1000;
+    try {
+      if (!sessionId) {
+        console.warn("⏳ No sessionId — aborting analysis");
+        return;
+      }
+    const lastUserMessage = [...messages].reverse().find(msg => msg.sender === 'user')?.text;
+    if (!lastUserMessage) return;
 
-        const retryWithBackoff = async (retryCount = 0) => {
-          try {
-            const lastUserMessage = [...messages].reverse().find(msg => msg.sender === 'user')?.text;
-            if (!lastUserMessage) return;
+    const result = await analyzeEmotions(lastUserMessage, sessionId);
+    const ready = result.ready_for_search === true;
+    const isGuidanceReady = result.guidance_response?.toLowerCase().includes("ready for analysis");
+    const hasText = !!result.accumulated_text;
 
-            console.log('Sending message to API:', lastUserMessage);
+//     console.log('🔍 API result flags:', {
+//   readyForSearchRaw: result.ready_for_search,
+//   readyParsed: ready,
+//   needsMoreDetail: result.needs_more_detail,
+//   sessionId: result.session_id,
+//   accumulatedText: result.accumulated_text,
+// });
 
-            const result = await analyzeEmotions(lastUserMessage);
-            console.log('API Response:', result);
+    console.log('API Response:', result);
+    setInitialAnalysis(result);
 
-            // Store the initial analysis
-            setInitialAnalysis(result);
+    const moreDetail = result.needs_more_detail === true;
+    setNeedsMoreDetail(moreDetail);
 
-            const moreDetail = result.needs_more_detail === true;
-            setNeedsMoreDetail(moreDetail);
+    if (result.guidance_response) {
+      setMessages(prev => [
+        ...prev,
+        { sender: 'ai', text: result.guidance_response }
+      ]);
+    }
 
-            // Show AI guidance if needed
-            if (result.guidance_response) {
-              setMessages(prev => [
-                ...prev,
-                { sender: 'ai', text: result.guidance_response }
-              ]);
-            }
+    if (!moreDetail && (ready || isGuidanceReady) && sessionId && hasText) {
+      console.log('✅ ✅ Ready for search (fallback via guidance), showing ReadyModal');
+      setTimeout(() => setShowReadyModal(true), 300);
+    } else {
+      console.log('⚠️ Not ready for search:', {
+        needsMoreDetail: moreDetail,
+        readyForSearch: ready,
+        hasSessionId: !!sessionId
+      });
+    }
 
-            // client-side check for input quality
-            const isSufficientText = result.accumulated_text && result.accumulated_text.trim().split(/\s+/).length >= 30;
+  } catch (error) {
+    console.error('❌ Error analyzing emotions:', error);
 
-            if (
-              result.needs_more_detail === false &&
-              result.session_id &&
-              isSufficientText
-            ) {
-              setTimeout(() => setShowReadyModal(true), 300);
-            }
+    const fallbackMessage = error.message.includes('Network')
+      ? "I'm having trouble connecting to the network. Please check your connection and try again."
+      : "I'm sorry, I had trouble analyzing your emotions. Could you try again?";
 
-
-          } catch (error) {
-            console.error('Error analyzing emotions:', error);
-
-            if (
-              retryCount < maxRetries &&
-              (
-                error.message.includes('Failed to fetch') || 
-                error.message.includes('NetworkError') || 
-                error.message.includes('ERR_INTERNET_DISCONNECTED')
-              )
-            ) {
-              const delay = baseDelay * Math.pow(2, retryCount);
-              console.log(`Retrying in ${delay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
-
-              setMessages(prev => [
-                ...prev,
-                { sender: 'ai', text: `I'm having trouble connecting. Retrying in a moment... (Attempt ${retryCount + 1}/${maxRetries})` }
-              ]);
-
-              await new Promise(resolve => setTimeout(resolve, delay));
-              return retryWithBackoff(retryCount + 1);
-            }
-
-            const fallbackMessage = error.message.includes('Network')
-              ? "I'm having trouble connecting to the network. Please check your connection and try again."
-              : "I'm sorry, I had trouble analyzing your emotions. Could you try again?";
-
-            setMessages(prev => [
-              ...prev,
-              { sender: 'ai', text: fallbackMessage }
-            ]);
-          } finally {
-            setPendingResponse(false);
-            setHasProcessedMessage(true);
-          }
-        };
-
-        retryWithBackoff();
-      };
+    setMessages(prev => [
+      ...prev,
+      { sender: 'ai', text: fallbackMessage }
+    ]);
+  } finally {
+    setPendingResponse(false);
+    setHasProcessedMessage(true);
+  }
+};
 
       analyzeEmotionsFromText();
-    }
-  }, [pendingResponse, messages, hasProcessedMessage]);
+  }, [pendingResponse, messages, hasProcessedMessage, sessionId]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -399,6 +400,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                   whileTap={{ scale: 0.95 }}
                   className="text-gray-500 hover:text-black text-5xl m-8"
                   onClick={() => {
+                    setSessionId(null);
                     onClose();
                     setTimeout(scrollToWheel, 100);
                   }}
@@ -577,11 +579,12 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
       <ReadyModal 
         isOpen={showReadyModal}
         onClose={() => {
+          setSessionId(null);
           setShowReadyModal(false);
           onClose();
-          setTimeout(scrollToWheel, 100);
         }}
         onSearch={handleSearch}
+        onEmotionsAnalyzed={onEmotionsAnalyzed}
       />
     </>
   )

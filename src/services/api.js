@@ -2,21 +2,14 @@ export const API_BASE_URL = 'https://toweel-backend-1080725638827.europe-west1.r
 
 export const analyzeEmotions = async (text, sessionId, options = {}) => {
   try {
-    console.log('=== API FUNCTION DEBUG ===');
-    console.log('Received text:', text);
-    console.log('Received sessionId:', sessionId);
-    console.log('Received options:', options);
-    console.log('=== END DEBUG ===');
-
     const payload = {
       text,
+      session_id: sessionId,
       ...options,
     };
 
+
     const endpoint = options.execute_search ? '/search/execute' : '/search/';
-    
-    console.log('Making API request to:', `${API_BASE_URL}${endpoint}`);
-    console.log('Request payload:', payload);
 
     // Build headers object
     const headers = {

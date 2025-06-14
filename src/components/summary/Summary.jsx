@@ -1,13 +1,16 @@
 import { AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
 import { useEffect, useRef } from 'react'
-import { generateEmotionSummaryPDF } from '../../utils/pdfGenerator'
+import EmotionSummaryDocument from '../../utils/pdfGenerator.jsx'
+import { PDFDownloadLink } from '@react-pdf/renderer'
 
 const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
   const contentRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen) {
+    console.log('Saving to localStorage:', { cards, summaryReport });
+    
+    if (isOpen && summaryReport) {
       // Save reading to localStorage
       const savedReadings = localStorage.getItem('emotionReadings');
       const readings = savedReadings ? JSON.parse(savedReadings) : [];
@@ -37,10 +40,6 @@ const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
         block: 'start'
       });
     }
-  };
-
-  const handleDownloadPDF = () => {
-    generateEmotionSummaryPDF(contentRef);
   };
 
   return (
@@ -114,11 +113,35 @@ const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
                     <div className="space-y-4">
                       <div id="overall-analysis" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
                         <h3 className="text-xl font-medium mb-4">Overall Analysis</h3>
-                        {summaryReport?.overallAnalysis?.map((paragraph, index) => (
-                          <p key={index} className="text-gray-700 mb-4">
-                            {paragraph}
-                          </p>
-                        ))}
+                        {summaryReport?.keyInsightsSummary ? (
+                          <div className="text-gray-700 space-y-4">
+                            {summaryReport.keyInsightsSummary.split('\n\n').map((section, index) => {
+                              // Check if section starts with ** and ends with **
+                              if (section.startsWith('**') && section.endsWith('**')) {
+                                return (
+                                  <h4 key={index} className="font-bold text-lg">
+                                    {section.replace(/\*\*/g, '')}
+                                  </h4>
+                                );
+                              }
+                              // Check if section starts with a number and period
+                              if (/^\d+\.\s/.test(section)) {
+                                return (
+                                  <div key={index} className="ml-4">
+                                    <p>{section}</p>
+                                  </div>
+                                );
+                              }
+                              return <p key={index}>{section}</p>;
+                            })}
+                          </div>
+                        ) : (
+                          summaryReport?.overallAnalysis?.map((paragraph, index) => (
+                            <p key={index} className="text-gray-700 mb-4">
+                              {paragraph}
+                            </p>
+                          ))
+                        )}
                       </div>
 
                       <div id="key-insights" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
@@ -128,11 +151,6 @@ const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
                             <li key={index}>{insight}</li>
                           ))}
                         </ul>
-                        {summaryReport?.keyInsightsSummary && (
-                          <p className="text-gray-700 mt-4">
-                            {summaryReport.keyInsightsSummary}
-                          </p>
-                        )}
                       </div>
 
                       <div id="moving-forward" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
@@ -147,15 +165,20 @@ const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
 
                     {/* Close and Download Buttons */}
                     <div className="mt-6 flex justify-center gap-4">
-                      <button
-                        onClick={handleDownloadPDF}
+                      <PDFDownloadLink
+                        document={<EmotionSummaryDocument cards={cards} summaryReport={summaryReport} />}
+                        fileName="emotion-summary.pdf"
                         className="px-8 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center gap-2"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        Download PDF
-                      </button>
+                        {({ loading }) => (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                            {loading ? 'Preparing PDF...' : 'Download PDF'}
+                          </>
+                        )}
+                      </PDFDownloadLink>
                       <button
                         onClick={onClose}
                         className="px-8 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
