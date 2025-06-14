@@ -55,7 +55,7 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
           
           // Animate the wheel rotation
           console.log('🎬 About to start animation...');
-          const animation = animate(wheelRotation, currentRotation + 360, {
+          await animate(wheelRotation, currentRotation + 360, {
             duration: 2,
             ease: 'easeInOut',
             onUpdate: (latest) => {
@@ -63,8 +63,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
             }
           });
           
-          // Wait for the rotation animation to complete
-          await animation;
           console.log('✅ Wheel animation completed');
 
           // Wait a bit before highlighting cards
@@ -78,14 +76,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
           console.error('❌ Error during animation:', error);
           setPendingAnimation(null);
         }
-      } else {
-        console.log('⏳ Waiting for conditions to be met:', {
-          pendingAnimation: pendingAnimation ? 'exists' : 'null',
-          isModalOpen,
-          isCardReadingOpen,
-          isSummaryOpen,
-          isDialogueOpen
-        });
       }
     };
 
@@ -199,7 +189,10 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
       console.log('✅ Selected cards prepared:', newSelectedCards);
       setSelectedCards(newSelectedCards);
 
-      // Store the animation data instead of executing it immediately
+      // Close the dialogue modal first
+      setIsDialogueOpen(false);
+
+      // Store the animation data
       console.log('📦 Storing animation data:', { indices, newSelectedCards });
       setPendingAnimation({
         indices,
