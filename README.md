@@ -1,6 +1,8 @@
 # Toweel – Frontend
 
-A beautifully interactive emotion exploration tool that lets users express themselves via text or voice, and receive AI-driven emotional insights — complete with animated visuals and downloadable reports.
+Toweel is an intelligent emotion analysis search engine demo project developed for the AI in Action Hackathon. This project adopts a frontend-backend separation architecture, and this repository contains the backend API service.
+
+By combining Google Cloud Vertex AI's text embedding models with MongoDB vector database, Toweel can understand users' emotional expressions and return relevant emotional content, helping users better understand and express their emotional states.
 
 ---
 
@@ -23,12 +25,20 @@ This is the frontend of the Emotional Wheel app. Users can input how they feel (
 
 ## 🛠️ Tech Stack
 
-- **React** – Component-based UI architecture  
-- **TailwindCSS** – Utility-first styling  
-- **Framer Motion** – Smooth UI and SVG animations  
-- **Web Speech API** – Voice-to-text functionality  
-- **Firebase Hosting** – Deployment and CI/CD  
-- **Custom SVG Animations** – Emotion-specific visual effects  
+### UI Development
+- **React.js** – Built with a component-based architecture for reusability and scalability.
+- **TailwindCSS** – Used for utility-first styling, enabling rapid, responsive design.
+- **Framer Motion** – Powered lightweight & interactive UI transitions, and fine-tuned animations for each emotion, including path-drawing, transform effects, and reverse-order rendering.
+
+### Voice Input
+- **Web Speech API** – Integrated native browser speech-to-text for a natural, hands-free input experience.
+
+### PDF Generation
+- **React-pdf API** – Used to generate downloadable summary reports that reflect user emotion insights in a clean, readable format.
+
+### Deployment & CI/CD Integration
+- **Firebase Hosting** – Deployed the frontend with automatic builds and fast CDN delivery. Set up continuous deployment via Firebase for smooth updates from Git-based workflows.
+
 
 ---
 
