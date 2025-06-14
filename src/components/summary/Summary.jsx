@@ -4,22 +4,30 @@ import { useEffect, useRef } from 'react'
 import EmotionSummaryDocument from '../../utils/pdfGenerator.jsx'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 
-const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
+const Summary = ({ isOpen, onClose, cards, summaryReport, accumulated_text }) => {
   const contentRef = useRef(null);
 
   useEffect(() => {
-    console.log('Saving to localStorage:', { cards, summaryReport });
+    console.log('Summary component - isOpen:', isOpen);
+    console.log('Summary component - cards:', cards);
+    console.log('Summary component - summaryReport:', summaryReport);
+    console.log('Summary component - accumulated_text:', accumulated_text);
     
     if (isOpen && summaryReport) {
       // Save reading to localStorage
       const savedReadings = localStorage.getItem('emotionReadings');
+      console.log('Existing readings from localStorage:', savedReadings);
+      
       const readings = savedReadings ? JSON.parse(savedReadings) : [];
       
       const newReading = {
         timestamp: Date.now(),
         cards: cards,
-        summaryReport: summaryReport
+        summaryReport: summaryReport,
+        accumulated_text: accumulated_text
       };
+      
+      console.log('New reading to be saved:', newReading);
       
       // Add new reading to the beginning of the array
       readings.unshift(newReading);
@@ -28,8 +36,9 @@ const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
       const trimmedReadings = readings.slice(0, 50);
       
       localStorage.setItem('emotionReadings', JSON.stringify(trimmedReadings));
+      console.log('Updated readings saved to localStorage');
     }
-  }, [isOpen, cards, summaryReport]);
+  }, [isOpen, cards, summaryReport, accumulated_text]);
 
   const handleNavClick = (e, id) => {
     e.preventDefault();
@@ -111,6 +120,15 @@ const Summary = ({ isOpen, onClose, cards, summaryReport }) => {
                     <h2 className="text-2xl font-semibold mb-8 text-center">Your Emotion Reading Summary</h2>
 
                     <div className="space-y-4">
+                      {accumulated_text && (
+                        <div id="what-you-shared" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
+                          <h3 className="text-xl font-medium mb-4">What You Shared</h3>
+                          <div className="text-gray-700">
+                            <p className="whitespace-pre-wrap">{accumulated_text}</p>
+                          </div>
+                        </div>
+                      )}
+
                       <div id="overall-analysis" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
                         <h3 className="text-xl font-medium mb-4">Overall Analysis</h3>
                         {summaryReport?.keyInsightsSummary ? (

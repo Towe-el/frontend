@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Wheel from '../components/wheel/Wheel'
 import Navbar from '../components/navbar/Navbar'
 import ProductIntroModal from '../components/product-intro/ProductIntroModal'
@@ -12,6 +12,7 @@ function Home() {
   const [emotionData, setEmotionData] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
   const wheelRef = useRef();
+  const [shouldScroll, setShouldScroll] = useState(false);
 
   const handleGetStarted = () => {
     setShowIntro(false);
@@ -34,20 +35,43 @@ function Home() {
   const handleEmotionsAnalyzed = (emotions, summaryReport) => {
     setEmotionData(emotions);
     setSummaryData(summaryReport);
+    setShouldScroll(true);
 
     console.log('Emotions analyzed in Home:', emotions);
     console.log('Summary report in Home:', summaryReport);
-
-    // Scroll to wheel
-    setTimeout(() => {
-      if (wheelRef.current) {
-        console.log('📌 Scrolling to wheel');
-        wheelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        console.warn('⚠️ Cannot scroll: wheelRef is not attached.');
-      }
-    }, 300);
   };
+
+  // Separate effect for handling scroll
+  useEffect(() => {
+    if (shouldScroll && wheelRef.current) {
+      console.log('📌 Attempting to scroll to wheel');
+      
+      const scrollToWheel = () => {
+        if (wheelRef.current) {
+          const wheelElement = wheelRef.current;
+          const wheelPosition = wheelElement.getBoundingClientRect().top + window.pageYOffset;
+          
+          window.scrollTo({
+            top: wheelPosition,
+            behavior: 'smooth'
+          });
+          
+          console.log('📌 Scrolled to wheel position:', wheelPosition);
+        }
+      };
+
+      // Try multiple times to ensure scroll works
+      scrollToWheel();
+      const attempts = [100, 300, 500].map(delay => 
+        setTimeout(scrollToWheel, delay)
+      );
+      
+      // Reset scroll trigger
+      setShouldScroll(false);
+      
+      return () => attempts.forEach(clearTimeout);
+    }
+  }, [shouldScroll]);
 
   return (
     <div className="h-screen w-full overflow-x-hidden">

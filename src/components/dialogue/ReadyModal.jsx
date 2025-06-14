@@ -19,6 +19,8 @@ const ReadyModal = ({ isOpen, onClose, onSearch }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSpinClick = async () => {
+    if (isLoading) return; // Prevent multiple clicks
+    
     setIsLoading(true);
     try {
       // Call onSearch but don't close modal yet

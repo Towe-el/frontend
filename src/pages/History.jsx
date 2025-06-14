@@ -15,10 +15,33 @@ const History = () => {
 
   useEffect(() => {
     // Load readings from localStorage
-    const savedReadings = localStorage.getItem('emotionReadings');
-    if (savedReadings) {
-      setReadings(JSON.parse(savedReadings));
-    }
+    const loadReadings = () => {
+      const savedReadings = localStorage.getItem('emotionReadings');
+      
+      if (savedReadings) {
+        try {
+          const parsedReadings = JSON.parse(savedReadings);
+          console.log('History page - Parsed readings:', parsedReadings);
+          if (Array.isArray(parsedReadings) && parsedReadings.length > 0) {
+            setReadings(parsedReadings);
+          } else {
+            console.log('No valid readings found in localStorage');
+            setReadings([]);
+          }
+        } catch (error) {
+          console.error('Error parsing readings from localStorage:', error);
+          setReadings([]);
+        }
+      } else {
+        console.log('No readings found in localStorage');
+        setReadings([]);
+      }
+    };
+
+    loadReadings();
+    // Add event listener for storage changes
+    window.addEventListener('storage', loadReadings);
+    return () => window.removeEventListener('storage', loadReadings);
   }, []);
 
   const formatDate = (timestamp) => {
@@ -86,7 +109,7 @@ const History = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {readings.map((reading) => (
+              {[...readings].sort((a, b) => b.timestamp - a.timestamp).map((reading) => (
                 <div
                   key={reading.timestamp}
                   className="bg-white/40 backdrop-blur rounded-xl p-4 h-[300px] flex flex-col cursor-pointer hover:bg-white/60 transition-colors relative"
@@ -94,26 +117,21 @@ const History = () => {
                 >
                   <div className="flex items-start gap-4 h-full">
                     {/* Left side - Timestamp */}
-                    <div className="text-lg font-medium">
+                      <div className="flex flex-col text-left w-48">
+                    <div className="text-sm text-gray-500">
                       {formatDate(reading.timestamp)}
                     </div>
+                  </div>
+
                     {/* Right side - Cards and user input */}
                     <div className="flex-1 flex flex-col items-end">
                       {/* User input */}
-                      <div className="w-[calc(100%-2rem)] flex flex-col h-full">
-                        <div className="flex-1 bg-white/60 p-3 rounded-lg overflow-y-auto custom-scrollbar">
-                          <div className="space-y-2 text-right">
-                            {reading.summaryReport?.keyInsightsSummary ? (
-                              <p className="text-gray-700 line-clamp-3">
-                                {reading.summaryReport.keyInsightsSummary.split('\n\n')[0]}
-                              </p>
-                            ) : (
-                              <p className="text-gray-700 line-clamp-2">
-                                {reading.userInput || "No user input recorded for this reading."}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                      <div className="h-full">
+                        {reading.title && (
+                        <div className="text-xl font-semibold text-gray-800 m-4">
+                        {reading.title}
+                      </div>
+                    )}
                       </div>
                       <div className="flex gap-1 items-center mt-4">
                         {reading.cards.map((card, cardIndex) => (
@@ -153,6 +171,7 @@ const History = () => {
             onClose={handleCloseSummary}
             cards={selectedReading.cards}
             summaryReport={selectedReading.summaryReport}
+            accumulated_text={selectedReading.accumulated_text}
           />
         </>
       )}

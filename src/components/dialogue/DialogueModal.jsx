@@ -211,9 +211,25 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
         console.log('✅ Processed summary report:', summaryReport);
 
         if (onEmotionsAnalyzed) {
-          console.log('🎯 Calling onEmotionsAnalyzed with emotions:', emotions);
           await onEmotionsAnalyzed(emotions, summaryReport);
           console.log('✅ onEmotionsAnalyzed called successfully');
+
+          // 🧠 Prepare reading object to store in history
+          const newReading = {
+            sessionId: searchResult.session_id,
+            timestamp: Date.now(),
+            title: searchResult.title || 'Untitled',
+            accumulated_text: initialAnalysis.accumulated_text,
+            cards: emotions,
+            summaryReport
+          };
+
+          // 🗃 Save to localStorage
+          const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
+          localStorage.setItem('emotionReadings', JSON.stringify([...prev, newReading]));
+
+          console.log('💾 Saved session to localStorage');
+
           setShowReadyModal(false);
           onClose();
         } else {

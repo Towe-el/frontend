@@ -20,7 +20,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
   const [currentReadingIndex, setCurrentReadingIndex] = useState(0);
   const [isDialogueOpen, setIsDialogueOpen] = useState(showDialogue);
   const [pendingAnimation, setPendingAnimation] = useState(null);
-  const [pendingHighlightedCards, setPendingHighlightedCards] = useState([]);
   const [currentSummaryReport, setCurrentSummaryReport] = useState(null);
 
   const wheelRotation = useMotionValue(0);
@@ -35,58 +34,63 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
         hasPendingAnimation: !!pendingAnimation,
         isModalOpen,
         isCardReadingOpen,
-        isSummaryOpen
+        isSummaryOpen,
+        isDialogueOpen
       });
 
-      if (pendingAnimation && !isModalOpen && !isCardReadingOpen && !isSummaryOpen) {
-        // Scroll to wheel first
-        const wheelSection = document.querySelector('.wheel-container');
-        if (wheelSection) {
-          console.log('📌 Scrolling to wheel');
-          wheelSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Only execute animation when dialogue is closed and we have pending animation
+      if (pendingAnimation && !isModalOpen && !isCardReadingOpen && !isSummaryOpen && !isDialogueOpen) {
+        console.log('🎬 Starting animation sequence...');
+        
+        try {
+          // Wait for Home.jsx's scroll to complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          console.log('🎬 Starting wheel animation...');
+          const currentRotation = wheelRotation.get();
+          console.log('🎬 Current rotation:', currentRotation);
+          
+          // Reset highlighted cards before starting animation
+          setHighlightedCards([]);
+          
+          // Animate the wheel rotation
+          console.log('🎬 About to start animation...');
+          const animation = animate(wheelRotation, currentRotation + 360, {
+            duration: 2,
+            ease: 'easeInOut',
+            onUpdate: (latest) => {
+              console.log('🎬 Animation update:', latest);
+            }
+          });
+          
+          // Wait for the rotation animation to complete
+          await animation;
+          console.log('✅ Wheel animation completed');
+
+          // Wait a bit before highlighting cards
+          await new Promise(resolve => setTimeout(resolve, 500));
+          console.log('🌟 Setting highlighted cards:', pendingAnimation.indices);
+          setHighlightedCards(pendingAnimation.indices);
+          console.log('✅ All states updated');
+          
+          setPendingAnimation(null);
+        } catch (error) {
+          console.error('❌ Error during animation:', error);
+          setPendingAnimation(null);
         }
-
-        // Wait for scroll to complete before starting animation
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        console.log('🎬 Starting wheel animation...');
-        const currentRotation = wheelRotation.get();
-        console.log('🎬 Current rotation:', currentRotation);
-        
-        // Animate the wheel rotation
-        console.log('🎬 About to start animation...');
-        const animation = animate(wheelRotation, currentRotation + 360, {
-          duration: 2,
-          ease: 'easeInOut',
-          onUpdate: (latest) => {
-            console.log('🎬 Animation update:', latest);
-          },
-          onComplete: () => {
-            console.log('✅ Wheel animation completed');
-            // Wait a bit before highlighting cards
-            setTimeout(() => {
-              console.log('🌟 Setting highlighted cards:', pendingAnimation.indices);
-              setHighlightedCards(pendingAnimation.indices);
-              console.log('✅ All states updated');
-            }, 500);
-          }
-        });
-        
-        await animation;
-        console.log('✅ Animation promise resolved');
-        setPendingAnimation(null);
       } else {
         console.log('⏳ Waiting for conditions to be met:', {
           pendingAnimation: pendingAnimation ? 'exists' : 'null',
           isModalOpen,
           isCardReadingOpen,
-          isSummaryOpen
+          isSummaryOpen,
+          isDialogueOpen
         });
       }
     };
 
     executeAnimation();
-  }, [pendingAnimation, isModalOpen, isCardReadingOpen, isSummaryOpen]);
+  }, [pendingAnimation, isModalOpen, isCardReadingOpen, isSummaryOpen, isDialogueOpen, wheelRotation]);
 
   // Expose handleEmotionsAnalyzed through the ref
   useImperativeHandle(ref, () => ({
@@ -152,11 +156,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
       
       // Store the summary report separately
       setCurrentSummaryReport(summaryReport);
-      
-      console.log('🎯 Emotions type:', typeof emotions);
-      console.log('🎯 Emotions is array:', Array.isArray(emotions));
-      console.log('🎯 Emotions length:', emotions?.length);
-      console.log('🎯 Emotions content:', JSON.stringify(emotions, null, 2));
 
       if (!emotions || !Array.isArray(emotions) || emotions.length === 0) {
         console.error('❌ Invalid emotions data received:', emotions);
@@ -206,7 +205,6 @@ const Wheel = forwardRef(({ showDialogue = false }, ref) => {
         indices,
         newSelectedCards
       });
-      setPendingHighlightedCards(indices);
       console.log('✅ Animation data stored');
 
     } catch (error) {
