@@ -17,15 +17,18 @@ const History = () => {
     // Load readings from localStorage
     const loadReadings = () => {
       const savedReadings = localStorage.getItem('emotionReadings');
+      console.log('Raw saved readings:', savedReadings);
       
       if (savedReadings) {
         try {
           const parsedReadings = JSON.parse(savedReadings);
-          console.log('History page - Parsed readings:', parsedReadings);
+          console.log('Parsed readings:', parsedReadings);
+          
           if (Array.isArray(parsedReadings) && parsedReadings.length > 0) {
+            console.log('Setting readings:', parsedReadings);
             setReadings(parsedReadings);
           } else {
-            console.log('No valid readings found in localStorage');
+            console.log('No valid readings array found');
             setReadings([]);
           }
         } catch (error) {
@@ -33,7 +36,7 @@ const History = () => {
           setReadings([]);
         }
       } else {
-        console.log('No readings found in localStorage');
+        console.log('No saved readings found in localStorage');
         setReadings([]);
       }
     };

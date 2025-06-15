@@ -3,7 +3,7 @@ import LogoHeader from "../../assets/LogoHeader.png"
 
 function Navbar() {
   return (
-    <nav className="fixed top-0 w-full bg-white z-50 h-8 flex items-center space-x-12 p-8">
+    <nav className="fixed top-0 w-full bg-white z-50 h-3 flex items-center space-x-12 p-6">
         <div className="p-4">
             <img
             src={LogoHeader}

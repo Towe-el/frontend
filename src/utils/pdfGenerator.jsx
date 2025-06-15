@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
 });
 
 // Create Document Component
-const EmotionSummaryDocument = ({ cards, summaryReport }) => (
+const EmotionSummaryDocument = ({ cards, summaryReport, accumulated_text }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <Text style={styles.title}>Your Emotion Reading Summary</Text>
@@ -75,6 +75,12 @@ const EmotionSummaryDocument = ({ cards, summaryReport }) => (
             <Text style={styles.cardText}>{card.definition}</Text>
           </View>
         ))}
+      </View>
+
+      {/* What You Shared */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>What You Shared</Text>
+        <Text style={styles.text}>{accumulated_text || 'No conversation content available.'}</Text>
       </View>
 
       {/* Overall Analysis */}

@@ -8,6 +8,7 @@ import { checkMicrophonePermission, startRecording } from '../../utils/speechToT
 import { LoadingAnimation } from '../../animations/LoadingAnimation'
 import ReadyModal from './ReadyModal'
 import LogoImage2 from '../../assets/LogoImage2.png'
+import { structureSummaryReport, createReadingObject } from '../../utils/summaryReportUtils'
 
 const LoadingDots = () => {
   return (
@@ -191,38 +192,18 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
           quote: item.quote || ''
         }));
 
-        // Generate summary report
-        const summaryReport = {
-          overallAnalysis: [
-            `Based on your input, we've identified ${emotions.length} primary emotions that you're experiencing.`,
-            emotions.map(e => `${e.emotion} (${Math.floor(e.percentage)}%)`).join(', '),
-            'Let\'s explore what these emotions mean for you.'
-          ],
-          keyInsights: emotions.map(e => e.analysis),
-          keyInsightsSummary: searchResult.rag_analysis.summary_report || 'These emotions suggest a complex emotional state that we can help you navigate.',
-          movingForward: [
-            'Understanding your emotions is the first step towards emotional well-being.',
-            'Consider discussing these feelings with someone you trust.',
-            'Remember that it\'s okay to feel this way, and you\'re not alone in your experience.'
-          ]
-        };
+        // Create summary report using the utility function
+        const summaryReport = structureSummaryReport(searchResult.rag_analysis, emotions);
 
         console.log('✅ Processed emotions:', emotions);
         console.log('✅ Processed summary report:', summaryReport);
 
         if (onEmotionsAnalyzed) {
-          await onEmotionsAnalyzed(emotions, summaryReport);
+          await onEmotionsAnalyzed(emotions, summaryReport, initialAnalysis.accumulated_text);
           console.log('✅ onEmotionsAnalyzed called successfully');
 
-          // 🧠 Prepare reading object to store in history
-          const newReading = {
-            sessionId: searchResult.session_id,
-            timestamp: Date.now(),
-            title: searchResult.title || 'Untitled',
-            accumulated_text: initialAnalysis.accumulated_text,
-            cards: emotions,
-            summaryReport
-          };
+          // Create reading object using the utility function
+          const newReading = createReadingObject(searchResult, emotions, initialAnalysis.accumulated_text);
 
           // 🗃 Save to localStorage
           const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
@@ -390,42 +371,23 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
     <>
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+          <div
             className="fixed inset-0 z-[1000] backdrop-blur-md flex items-center justify-center"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{
-                type: 'spring',
-                stiffness: 300,
-                damping: 25,
-                duration: 0.5
-              }}
+            <div
               className="w-full h-full flex flex-col bg-white/40 shadow-lg backdrop-blur"
               ref={scope}
             >
               <div className="flex justify-between items-center p-4">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   className="text-gray-500 hover:text-black text-5xl m-8"
-                  onClick={() => {
-                    setSessionId(null);
-                    onClose();
-                    setTimeout(scrollToWheel, 100);
-                  }}
+                  onClick={onClose}
                 >
                   ×
-                </motion.button>
+                </button>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center px-4">
+              <div className="flex-1 flex w-full flex-col items-center justify-center px-4 -mt-[120px]">
                 <div className="w-[80%] flex gap-4">
                   {/* Previous Answers Section */}
                   <div className="w-1/4 bg-white/50 p-4 rounded-lg h-[60vh] overflow-y-auto">
@@ -434,22 +396,19 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                       {messages
                         .filter(msg => msg.sender === 'user')
                         .map((msg, idx) => (
-                          <motion.div
+                          <div
                             key={idx}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3 }}
                             className="text-sm text-gray-600 bg-gray-100 p-2 rounded w-full"
                           >
                             {msg.text}
-                          </motion.div>
+                          </div>
                         ))}
                     </div>
                   </div>
 
                   {/* Main Dialogue Section */}
                   <div className='w-full'>
-                    <motion.div
+                    <div
                       ref={containerRef}
                       className={`${showHistory ? 'h-[60vh]' : 'h-auto'} overflow-y-auto mb-4 bg-white/50 p-4 rounded-lg space-y-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
                     >
@@ -457,25 +416,19 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                         messages
                           .filter(msg => msg.sender === 'ai')
                           .map((msg, idx) => (
-                            <motion.div
+                            <div
                               key={idx}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.3 }}
                               className="flex flex-col items-start w-full"
                             >
                               <span className="text-xs text-gray-500 mb-1">
                                 Toweel
                               </span>
-                              <motion.div
-                                initial={{ scale: 0.95 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                              <div
                                 className="px-4 py-2 text-base text-gray-800 w-full"
                               >
                                 {formatMessageText(msg.text)}
-                              </motion.div>
-                            </motion.div>
+                              </div>
+                            </div>
                           ))
                       ) : (
                         messages.length > 0 && (
@@ -484,54 +437,39 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                               .filter(msg => msg.sender === 'ai')
                               .slice(-1)
                               .map((msg, idx) => (
-                                <motion.div
+                                <div
                                   key={idx}
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ duration: 0.3 }}
                                   className="flex flex-col items-start w-full mb-6"
                                 >
                                   {idx === 0 && (
-                                    <motion.img
+                                    <img
                                       src={LogoImage2}
                                       alt="Toweel Logo"
                                       className="w-126 h-44 mb-4 pl-35"
-                                      initial={{ scale: 0.8, opacity: 0 }}
-                                      animate={{ scale: 1, opacity: 1 }}
-                                      transition={{ duration: 0.5 }}
                                     />
                                   )}
-                                  <motion.div
-                                    initial={{ scale: 0.95 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                                  <div
                                     className="px-4 py-2 text-xl font-semibold text-gray-800 w-full"
                                   >
                                     {formatMessageText(msg.text)}
-                                  </motion.div>
-                                </motion.div>
+                                  </div>
+                                </div>
                               ))}
                           </>
                         )
                       )}
                       {pendingResponse && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
+                        <div
                           className="flex flex-col items-start w-full"
                         >
-                          <motion.div
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                          <div
                             className="px-4 py-2 text-base text-gray-800 w-[80%]"
                           >
                             <LoadingDots />
-                          </motion.div>
-                        </motion.div>
+                          </div>
+                        </div>
                       )}
-                    </motion.div>
+                    </div>
 
                     <div className="w-[80%] flex flex-col gap-2 mt-4">
                       <div className="relative">
@@ -588,8 +526,8 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
       <ReadyModal 
