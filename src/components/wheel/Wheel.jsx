@@ -38,6 +38,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
     cardClickMode,
   } = useSelector((state) => state.emotion);
 
+  const summaryState = useSelector((state) => state.summary);
+
   // Add debug logs for state changes
   useEffect(() => {
     console.log('Wheel: State updated:', {
@@ -143,8 +145,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
       dispatch(setCurrentReadingIndex(nextIndex));
     } else {
       console.log('✅ Last card read. Opening summary.');
-      setIsCardReadingOpen(false);
       dispatch(setSummaryOpen(true));
+      setIsCardReadingOpen(false);
     }
   };
 
