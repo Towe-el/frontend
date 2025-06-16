@@ -415,7 +415,7 @@ const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) 
         console.log('💾 Saved session to localStorage');
 
         // Close DialogueModal
-        onClose();
+        if (onClose) onClose();
       }
     } catch (error) {
       console.error('❌ Error during emotion analysis:', error);

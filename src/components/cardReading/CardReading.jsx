@@ -1,14 +1,16 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
-import { useRef, useEffect, useState } from 'react'
-import SummaryContent from '../summary/SummaryContent'
-import { useDispatch } from 'react-redux'
-import { setSummaryOpen } from '../../store/slices/summarySlice'
+import { useRef, useEffect} from 'react'
+import { simulatedEmotionData } from '../../data/emotionData';
 
 const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }) => {
+  const localDefinition = simulatedEmotionData.find(
+  (item) => item.emotion.toLowerCase() === (emotionData?.emotion || '').toLowerCase()
+)?.definition;
+
   const dialogueRef = useRef(null);
-  const [showSummary, setShowSummary] = useState(false);
-  const dispatch = useDispatch();
+  // const [showSummary, setShowSummary] = useState(false);
+  // const dispatch = useDispatch();
   
   const readingSteps = [
     {
@@ -25,7 +27,8 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
           <p className="text-3xl font-bold" style={{ color: emotionData?.textColor || '#2563EB' }}>{emotionData?.emotion || 'Unknown'}</p>
           <p className="text-xl mt-4 leading-relaxed font-bold" style={{ color: emotionData?.textColor || '#374151' }}>What is {emotionData?.emotion}?</p>
           <p className="text-xl mt-4 leading-relaxed" style={{ color: emotionData?.textColor || '#374151' }}>
-          {emotionData?.definition || 'No definition available'}</p>
+            {localDefinition || 'No definition available'}
+          </p>
            {emotionData?.analysis && (
             <div className="mt-4">
               <p className="text-lg" style={{ color: emotionData?.textColor || '#374151' }}>
@@ -63,14 +66,6 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
   }, [isOpen]);
 
   const handleNextCard = () => {
-    console.log('handleNextCard called, isLastCard:', isLastCard);
-    
-    if (isLastCard) {
-      console.log('Processing last card...');
-      // Only open the summary, data should already be in Redux
-      dispatch(setSummaryOpen(true));
-      console.log('Summary opened');
-    }
     onClose();
   };
 
@@ -181,19 +176,6 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
             </div>
           </motion.div>
         </motion.div>
-      )}
-      {showSummary && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <SummaryContent
-              accumulated_text={emotionData.accumulated_text}
-              summaryReport={emotionData.summaryReport}
-              cards={emotionData.cards}
-              onClose={() => setShowSummary(false)}
-              showSharedContent={false}
-            />
-          </div>
-        </div>
       )}
     </AnimatePresence>
   )

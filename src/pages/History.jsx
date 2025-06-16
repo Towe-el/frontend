@@ -92,7 +92,8 @@ const History = () => {
       dispatch(setSummaryData({
         cards: selectedReading.cards,
         accumulatedText: selectedReading.accumulated_text,
-        summaryReport: selectedReading.summaryReport
+        summaryReport: selectedReading.summaryReport,
+        isHistorical: true
       }));
       dispatch(setSummaryOpen(true));
     }

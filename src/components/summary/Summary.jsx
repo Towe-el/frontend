@@ -4,7 +4,9 @@ import { useSelector, useDispatch } from 'react-redux'
 import SummaryContent from './SummaryContent.jsx'
 import { setSummaryOpen } from '../../store/slices/summarySlice'
 
-const Summary = () => {
+const Summary = ({ onClose }) => {
+  console.log("🎉 SummaryContent mounted");
+
   const dispatch = useDispatch();
   const summaryState = useSelector((state) => state.summary) || {
     isOpen: false,
@@ -19,7 +21,7 @@ const Summary = () => {
   };
 
   useEffect(() => {
-    if (summaryState.isOpen && summaryState.summaryReport) {
+    if (summaryState.isOpen && summaryState.summaryReport && !summaryState.isHistorical) {
       // Save reading to localStorage
       const savedReadings = localStorage.getItem('emotionReadings');
       const readings = savedReadings ? JSON.parse(savedReadings) : [];
@@ -47,23 +49,35 @@ const Summary = () => {
         window.dispatchEvent(new Event('storage'));
       }
     }
-  }, [summaryState.isOpen, summaryState.summaryReport, summaryState.cards, summaryState.accumulatedText]);
+  }, [summaryState.isOpen, summaryState.summaryReport, summaryState.cards, summaryState.accumulatedText, summaryState.isHistorical]);
 
   const handleClose = () => {
     dispatch(setSummaryOpen(false));
+    if (onClose) {
+      onClose(); // 调用父组件传入的清理函数
+    }
   };
 
   return (
     <AnimatePresence>
       {summaryState.isOpen && (
         <div className="fixed inset-0 z-[1000] backdrop-blur-md flex items-center justify-center">
-          <div className="w-full h-full bg-white/40 backdrop-blur flex">
-            <SummaryContent
-              accumulated_text={summaryState.accumulatedText}
-              summaryReport={summaryState.summaryReport}
-              cards={summaryState.cards}
-              onClose={handleClose}
-            />
+          <div className="w-full h-full bg-white backdrop-blur flex relative">
+            <div className="w-full h-[100vh] bg-white rounded-lg overflow-y-auto relative">
+              {/* Back Button */}
+              <button
+                onClick={handleClose}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/80 hover:bg-black/20 transition-colors"
+              >
+                x
+              </button>
+              <SummaryContent
+                accumulated_text={summaryState.accumulatedText}
+                summaryReport={summaryState.summaryReport}
+                cards={summaryState.cards}
+                onClose={handleClose}
+              />
+            </div>
           </div>
         </div>
       )}

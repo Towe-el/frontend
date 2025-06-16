@@ -91,7 +91,6 @@ function Home() {
   };
 
   const handleSearch = async () => {
-    console.log('Home: Starting emotion analysis');
     if (dialogueRef.current) {
       await dialogueRef.current.handleEmotionAnalysis();
     }

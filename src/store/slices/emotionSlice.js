@@ -11,6 +11,7 @@ const initialState = {
   selectedCards: [],
   currentReadingIndex: 0,
   currentSummaryReport: null,
+  cardClickMode: 'detail', // 'detail' | 'reading'
 };
 
 export const emotionSlice = createSlice({
@@ -48,12 +49,16 @@ export const emotionSlice = createSlice({
     setCurrentSummaryReport: (state, action) => {
       state.currentSummaryReport = action.payload;
     },
+    setCardClickMode: (state, action) => {
+      state.cardClickMode = action.payload;
+    },
     resetWheelState: (state) => {
       state.selectedEmotion = null;
       state.selectedCards = [];
       state.currentReadingIndex = 0;
       state.currentSummaryReport = null;
       state.highlightedCards = [];
+      state.cardClickMode = 'detail';
     },
   },
 });
@@ -69,6 +74,7 @@ export const {
   setSelectedCards,
   setCurrentReadingIndex,
   setCurrentSummaryReport,
+  setCardClickMode,
   resetWheelState,
 } = emotionSlice.actions;
 

@@ -6,6 +6,7 @@ const initialState = {
   accumulatedText: '',
   summaryReport: null,
   currentReading: null,
+  isHistorical: false,
 };
 
 const summarySlice = createSlice({
@@ -16,10 +17,11 @@ const summarySlice = createSlice({
       state.isOpen = action.payload;
     },
     setSummaryData: (state, action) => {
-      const { cards, accumulatedText, summaryReport } = action.payload;
+      const { cards, accumulatedText, summaryReport, isHistorical } = action.payload;
       state.cards = cards;
       state.accumulatedText = accumulatedText;
       state.summaryReport = summaryReport;
+      state.isHistorical = !!isHistorical;
     },
     setCurrentReading: (state, action) => {
       state.currentReading = action.payload;
@@ -27,16 +29,6 @@ const summarySlice = createSlice({
     resetSummaryState: () => initialState,
   },
 });
-
-// const prepareSummaryData = (cards, emotions, accumulatedText) => {
-//   return {
-//     payload: {
-//       cards,
-//       accumulatedText,
-//       summaryReport: generateSummaryReport(emotions, accumulatedText)
-//     }
-//   };
-// }
 
 export const {
   setSummaryOpen,

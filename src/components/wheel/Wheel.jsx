@@ -13,6 +13,7 @@ import {
   setSelectedCards,
   setCurrentReadingIndex,
   setCurrentSummaryReport,
+  setCardClickMode,
 } from '../../store/slices/emotionSlice';
 import { setSummaryOpen, setSummaryData } from '../../store/slices/summarySlice';
 
@@ -34,6 +35,7 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
     selectedCards,
     currentReadingIndex,
     currentSummaryReport,
+    cardClickMode,
   } = useSelector((state) => state.emotion);
 
   // Add debug logs for state changes
@@ -100,40 +102,17 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
     return radians * (180 / Math.PI);
   };
 
-  const handleCardClick = (card) => {
-    console.log('Wheel: Card clicked:', card);
-    const matchingCard = selectedCards.find(c => c.emotion === card.emotion);
-    console.log('Wheel: Matching card found:', matchingCard);
-    
-    if (matchingCard) {
-      console.log('Wheel: Using matching card data:', matchingCard);
-      const emotionData = {
-        emotion: matchingCard.emotion,
-        definition: matchingCard.definition,
-        percentage: matchingCard.percentage || 0,
-        bgColor: matchingCard.bgColor,
-        textColor: matchingCard.textColor,
-        analysis: matchingCard.analysis || '',
-        quote: matchingCard.quote || ''
-      };
-      console.log('Wheel: Setting selected emotion:', emotionData);
-      dispatch(setSelectedEmotion(emotionData));
-      dispatch(setCurrentReadingIndex(selectedCards.findIndex(c => c.emotion === card.emotion)));
+  const handleCardClick = (data) => {
+    const idx = selectedCards.findIndex(card => card.emotion === data.emotion);
+    if (idx !== -1) {
+      // 高亮卡牌，进入读卡页面，emotionData 用 selectedCards[idx]
       setIsCardReadingOpen(true);
+      dispatch(setSelectedEmotion(selectedCards[idx]));
+      dispatch(setCurrentReadingIndex(idx));
     } else {
-      console.log('Wheel: Creating new emotion data from card:', card);
-      const emotionData = {
-        emotion: card.emotion,
-        definition: card.definition,
-        percentage: card.percentage || 0,
-        bgColor: card.bgColor,
-        textColor: card.textColor,
-        analysis: card.analysis || '',
-        quote: card.quote || ''
-      };
-      console.log('Wheel: Setting selected emotion:', emotionData);
-      dispatch(setSelectedEmotion(emotionData));
+      // 非高亮卡牌，弹出细节弹窗
       setIsModalOpen(true);
+      dispatch(setSelectedEmotion(data));
     }
   };
 
@@ -143,18 +122,14 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
   };
 
   const handleNextCard = () => {
-    console.log('Wheel: Moving to next card, current index:', currentReadingIndex);
-    console.log('Wheel: Current state before processing:', {
-      currentSummaryReport,
-      selectedCards,
-      accumulated_text,
-      currentReadingIndex
-    });
-    
+    console.log('🌀 handleNextCard called');
+
     if (currentReadingIndex < selectedCards.length - 1) {
       const nextIndex = currentReadingIndex + 1;
       const nextCard = selectedCards[nextIndex];
-      console.log('Wheel: Setting next card:', nextCard);
+
+      console.log('➡️ Moving to card index:', nextIndex, nextCard);
+
       dispatch(setSelectedEmotion({
         emotion: nextCard.emotion,
         definition: nextCard.definition,
@@ -164,36 +139,11 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
         analysis: nextCard.analysis || '',
         quote: nextCard.quote || ''
       }));
+
       dispatch(setCurrentReadingIndex(nextIndex));
     } else {
-      console.log('Wheel: Last card reached, showing summary');
-      console.log('Wheel: Current state:', {
-        currentSummaryReport,
-        selectedCards,
-        accumulated_text,
-        currentReadingIndex
-      });
-      
+      console.log('✅ Last card read. Opening summary.');
       setIsCardReadingOpen(false);
-      if (!currentSummaryReport || !selectedCards.length) {
-        console.error('Missing data for summary:', {
-          hasSummaryReport: !!currentSummaryReport,
-          cardsCount: selectedCards.length,
-          currentReadingIndex,
-          selectedCards,
-          currentSummaryReport
-        });
-        return;
-      }
-      
-      const summaryData = {
-        cards: selectedCards,
-        accumulatedText: accumulated_text,
-        summaryReport: currentSummaryReport
-      };
-      console.log('Wheel: Setting summary data:', summaryData);
-      
-      dispatch(setSummaryData(summaryData));
       dispatch(setSummaryOpen(true));
     }
   };
@@ -203,6 +153,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
     dispatch(setCurrentReadingIndex(0));
     dispatch(setSelectedCards([]));
     dispatch(setCurrentSummaryReport(null));
+    dispatch(setCardClickMode('detail'));
+    console.log('Set cardClickMode to detail (handleCloseSummary)');
   };
 
   const handleAllCardsRead = () => {
@@ -218,14 +170,13 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
   // Function to handle emotions analysis
   const handleEmotionsAnalyzed = async (emotions, summaryReport, newAccumulatedText) => {
     try {
-      // Store the summary report
-      dispatch(setCurrentSummaryReport(summaryReport));
-
+      console.log('handleEmotionsAnalyzed called', { emotions, summaryReport, newAccumulatedText });
       if (!emotions || !Array.isArray(emotions) || emotions.length === 0) {
         console.error('❌ Invalid emotions data received:', emotions);
         return;
       }
 
+      // Match emotions with simulated cards
       const newSelectedCards = emotions.map(emotion => {
         const matchingCard = simulatedEmotionData.find(card =>
           card.emotion.toLowerCase() === emotion.emotion.toLowerCase()
@@ -242,7 +193,15 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
         };
       }).filter(card => card !== null);
 
+      // Save into Redux (💡关键步骤)
+      dispatch(setCurrentSummaryReport(summaryReport)); // 可保留
       dispatch(setSelectedCards(newSelectedCards));
+      dispatch(setSummaryData({
+        cards: newSelectedCards,
+        accumulatedText: newAccumulatedText,
+        summaryReport: summaryReport,
+        isHistorical: false
+      }));
 
       // Save to localStorage
       const newReading = {
@@ -251,15 +210,17 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
         summaryReport: summaryReport,
         accumulated_text: newAccumulatedText,
       };
-
       const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
       localStorage.setItem('emotionReadings', JSON.stringify([...prev, newReading]));
 
-      // Close the dialogue modal
+      // Close dialogue and begin card reading
+      dispatch(setCardClickMode('reading'));
+      console.log('Set cardClickMode to reading');
+      setIsCardReadingOpen(true);
+      setIsModalOpen(false);
       setIsDialogueOpen(false);
 
-      // Open card reading
-      setIsCardReadingOpen(true);
+      // Start with first card
       dispatch(setSelectedEmotion({
         emotion: newSelectedCards[0].emotion,
         definition: newSelectedCards[0].definition,
@@ -270,6 +231,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
         quote: newSelectedCards[0].quote || ''
       }));
       dispatch(setCurrentReadingIndex(0));
+
+      console.log('✅ Emotion analysis handled successfully');
 
     } catch (error) {
       console.error('❌ Error during emotion analysis:', error);
@@ -372,7 +335,7 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
                   totalCards={simulatedEmotionData.length}
                   wheelRotation={wheelRotation}
                   isHighlighted={highlightedCards.includes(index)}
-                  onCardClick={handleCardClick}
+                  onCardClick={() => handleCardClick(data)}
                 />
               ))}
             </motion.div>
@@ -397,7 +360,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
         isLastCard={currentReadingIndex === selectedCards.length - 1}
       />
 
-      <Summary />
+      <Summary
+       />
 
       <DialogueModal
         isOpen={isDialogueOpen}
