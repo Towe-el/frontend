@@ -1,8 +1,13 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { LoadingAnimation } from '../../animations/LoadingAnimation';
 import Navbar from '../navbar/Navbar';
 import LogoImage1 from '../../assets/LogoImage1.png';
+import { setShowReadyModal } from '../../store/slices/dialogueSlice';
+import { setSelectedCards, setCurrentSummaryReport } from '../../store/slices/emotionSlice';
+import { setSummaryOpen, setSummaryData } from '../../store/slices/summarySlice';
+import { simulatedEmotionData } from '../../data/emotionData';
 
 const BackIcon = () => (
   <svg 
@@ -15,78 +20,124 @@ const BackIcon = () => (
   </svg>
 )
 
-const ReadyModal = ({ isOpen, onClose, onSearch }) => {
+const ReadyModal = ({ onSearch }) => {
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
+  const showReadyModal = useSelector((state) => state.dialogue.showReadyModal);
 
-  const handleSpinClick = async () => {
+  const handleClose = () => {
+    dispatch(setShowReadyModal(false));
+  };
+
+  const handleSearch = async () => {
     if (isLoading) return; // Prevent multiple clicks
     
     setIsLoading(true);
     try {
-      // Call onSearch but don't close modal yet
-      await onSearch();
-      // Keep loading state until wheel animation completes
-      // The modal will be closed by the parent component after wheel animation
+      console.log('ReadyModal: Starting emotion analysis');
+      const result = await onSearch();
+      
+      if (result && result.emotions) {
+        console.log('ReadyModal: Emotion analysis result received:', {
+          emotions: result.emotions,
+          summary_report: result.summary_report,
+          accumulated_text: result.accumulated_text
+        });
+        
+        // Map the emotions to cards and update Redux store
+        const newSelectedCards = result.emotions.map(emotion => {
+          const matchingCard = simulatedEmotionData.find(card =>
+            card.emotion.toLowerCase() === emotion.emotion.toLowerCase()
+          );
+          if (!matchingCard) {
+            console.error('❌ No matching card found for emotion:', emotion.emotion);
+            return null;
+          }
+          return {
+            ...matchingCard,
+            percentage: emotion.percentage,
+            quote: emotion.quote,
+            analysis: emotion.analysis
+          };
+        }).filter(card => card !== null);
+
+        console.log('ReadyModal: Setting selected cards:', newSelectedCards);
+        // Update Redux store with the new cards and summary
+        dispatch(setSelectedCards(newSelectedCards));
+        
+        if (result.summary_report) {
+          console.log('ReadyModal: Setting summary report to Redux:', result.summary_report);
+          dispatch(setCurrentSummaryReport(result.summary_report));
+          // Update summary state in Redux
+          const summaryData = {
+            cards: newSelectedCards,
+            accumulatedText: result.accumulated_text || '',
+            summaryReport: result.summary_report
+          };
+          console.log('ReadyModal: Setting summary data to Redux:', summaryData);
+          dispatch(setSummaryData(summaryData));
+          dispatch(setSummaryOpen(true));
+        } else {
+          console.warn('ReadyModal: No summary_report found in result');
+        }
+
+        // Save to localStorage
+        const newReading = {
+          timestamp: Date.now(),
+          cards: newSelectedCards,
+          summaryReport: result.summary_report,
+          accumulated_text: result.accumulated_text || '',
+        };
+        console.log('ReadyModal: Saving reading to localStorage:', newReading);
+
+        const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
+        localStorage.setItem('emotionReadings', JSON.stringify([...prev, newReading]));
+
+        // Close the ready modal
+        dispatch(setShowReadyModal(false));
+      } else {
+        console.warn('ReadyModal: No emotions data in result:', result);
+      }
     } catch (error) {
-      console.error('Error during search:', error);
+      console.error('ReadyModal: Error during emotion analysis:', error);
       setIsLoading(false);
-      onClose();
+      handleClose();
     }
   };
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+      {showReadyModal && (
+        <div
           className="fixed inset-0 z-[1001] bg-white flex flex-col"
         >
           <Navbar />
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onClose}
+          <button
+            onClick={handleClose}
             className="absolute top-24 left-8 text-gray-500 hover:text-gray-700 transition-colors z-10"
           >
             <BackIcon />
-          </motion.button>
+          </button>
           <div className="flex-1 flex items-center justify-center p-8">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{
-                type: 'spring',
-                stiffness: 300,
-                damping: 25,
-                duration: 0.5
-              }}
+            <div
               className="w-full max-w-[600px] rounded-2xl p-8"
             >
-              <motion.img
+              <img
                 src={LogoImage1}
                 alt="Toweel Logo"
                 className="w-126 h-64 mx-auto mb-8"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
               />
               <h2 className="text-5xl text-gray-800 mb-4">
                 Thank you for Sharing.
               </h2>
               <p className="text-gray-600 mb-8">
-                Sharing what you have what you feel is a powerful first step toward understanding your emotions. Toweel will now spin the emotional wheel and draw three cards for you, along with deeper insights and a detailed summary report.
+                Sharing what you feel is a powerful first step toward understanding your emotions. Toweel will now analyze your emotions and highlight relevant cards for you, along with deeper insights and a detailed summary report.
               </p>
               <p className="text-gray-700 mb-8">
-                Would you like Toweel to spin the wheel for you?
+                Would you like Toweel to analyze your emotions?
               </p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleSpinClick}
+              <button
+                onClick={handleSearch}
                 disabled={isLoading}
                 className="w-full py-4 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors disabled:opacity-50"
               >
@@ -97,10 +148,10 @@ const ReadyModal = ({ isOpen, onClose, onSearch }) => {
                 ) : (
                   "Spin the Wheel"
                 )}
-              </motion.button>
-            </motion.div>
+              </button>
+            </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   )

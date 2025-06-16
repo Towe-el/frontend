@@ -26,7 +26,7 @@ export const analyzeEmotions = async (text, sessionId, options = {}) => {
       throw new Error('Session ID is required for search execution but not provided');
     }
 
-    console.log('Request headers:', headers);
+    
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
@@ -36,9 +36,6 @@ export const analyzeEmotions = async (text, sessionId, options = {}) => {
       body: JSON.stringify(payload),
     });
 
-    console.log('API Response status:', response.status);
-    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error response:', errorText);
@@ -46,12 +43,10 @@ export const analyzeEmotions = async (text, sessionId, options = {}) => {
     }
 
     const data = await response.json();
-    console.log('API Response data:', data);
 
     // For the initial /search/ call, the backend might return a session_id
     // Check both response body and headers for session_id
     const responseSessionId = data.session_id || response.headers.get('session-id');
-    
     if (options.execute_search) {
       // For search execute, return the raw data since structure might be different
       return {

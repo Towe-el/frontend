@@ -25,11 +25,11 @@ export const checkMicrophonePermission = async () => {
 
 export const startRecording = (onInterimResult, onFinalResult) => {
   try {
-    console.log('Starting speech recognition...')
+    
     
     // If recognition is already active, stop it first
     if (isRecognitionActive) {
-      console.log('Stopping existing recognition session...')
+      
       recognition.stop()
       isRecognitionActive = false
     }
@@ -43,10 +43,10 @@ export const startRecording = (onInterimResult, onFinalResult) => {
       const isFinal = event.results[0].isFinal
       
       if (isFinal) {
-        console.log('Final transcript:', transcript)
+        
         onFinalResult(transcript)
       } else {
-        console.log('Interim transcript:', transcript)
+        
         onInterimResult(transcript)
       }
     }
@@ -59,14 +59,14 @@ export const startRecording = (onInterimResult, onFinalResult) => {
 
     // Handle end of recognition
     recognition.onend = () => {
-      console.log('Speech recognition ended')
+      
       isRecognitionActive = false
     }
 
     // Start recognition
     recognition.start()
     isRecognitionActive = true
-    console.log('Speech recognition started')
+    
 
     return {
       stop: () => {
@@ -101,7 +101,7 @@ export const downloadAudioBlob = (audioBlob, filename = 'recording.webm') => {
     // Clean up the URL
     URL.revokeObjectURL(url)
     
-    console.log('Audio file download initiated:', filename)
+    
   } catch (error) {
     console.error('Error downloading audio file:', error)
     throw error

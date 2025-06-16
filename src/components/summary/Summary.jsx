@@ -1,218 +1,74 @@
 import { AnimatePresence } from 'framer-motion'
-import EmotionCard from '../emotion-card/EmotionCard'
-import { useEffect, useRef } from 'react'
-import EmotionSummaryDocument from '../../utils/pdfGenerator.jsx'
-import { PDFDownloadLink } from '@react-pdf/renderer'
+import { useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import SummaryContent from './SummaryContent.jsx'
+import { setSummaryOpen } from '../../store/slices/summarySlice'
 
-const Summary = ({ isOpen, onClose, cards, summaryReport, accumulated_text }) => {
-  const contentRef = useRef(null);
+const Summary = () => {
+  const dispatch = useDispatch();
+  const summaryState = useSelector((state) => state.summary) || {
+    isOpen: false,
+    cards: [],
+    accumulatedText: '',
+    summaryReport: null
+  };
+
+  // Function to check for duplicate records using timestamp
+  const isDuplicateRecord = (readings, newReading) => {
+    return readings.some(reading => reading.timestamp === newReading.timestamp);
+  };
 
   useEffect(() => {
-    console.log('Summary component - isOpen:', isOpen);
-    console.log('Summary component - cards:', cards);
-    console.log('Summary component - summaryReport:', summaryReport);
-    console.log('Summary component - accumulated_text:', accumulated_text);
-    
-    if (isOpen && summaryReport) {
+    if (summaryState.isOpen && summaryState.summaryReport) {
       // Save reading to localStorage
       const savedReadings = localStorage.getItem('emotionReadings');
-      console.log('Existing readings from localStorage:', savedReadings);
-      
       const readings = savedReadings ? JSON.parse(savedReadings) : [];
       
+      // Create new reading object
       const newReading = {
         timestamp: Date.now(),
-        cards: cards,
-        summaryReport: summaryReport,
-        accumulated_text: accumulated_text
+        cards: summaryState.cards,
+        summaryReport: summaryState.summaryReport,
+        accumulated_text: summaryState.accumulatedText,
       };
-      
-      console.log('New reading to be saved:', newReading);
-      
-      // Add new reading to the beginning of the array
-      readings.unshift(newReading);
-      
-      // Keep only the last 50 readings
-      const trimmedReadings = readings.slice(0, 50);
-      
-      localStorage.setItem('emotionReadings', JSON.stringify(trimmedReadings));
-      console.log('Updated readings saved to localStorage');
-    }
-  }, [isOpen, cards, summaryReport, accumulated_text]);
 
-  const handleNavClick = (e, id) => {
-    e.preventDefault();
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
+      // Check for duplicates before adding
+      if (!isDuplicateRecord(readings, newReading)) {
+        // Add new reading to the beginning of the array
+        readings.unshift(newReading);
+        
+        // Keep only the last 50 readings
+        const trimmedReadings = readings.slice(0, 50);
+        
+        // Save to localStorage
+        localStorage.setItem('emotionReadings', JSON.stringify(trimmedReadings));
+        
+        // Trigger storage event for other tabs
+        window.dispatchEvent(new Event('storage'));
+      }
     }
+  }, [summaryState.isOpen, summaryState.summaryReport, summaryState.cards, summaryState.accumulatedText]);
+
+  const handleClose = () => {
+    dispatch(setSummaryOpen(false));
   };
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[1000] backdrop-blur-md">
-          <div className="fixed inset-0 bg-white backdrop-blur flex flex-col">
-            <button
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl z-10"
-              onClick={onClose}
-            >
-              ×
-            </button>
-
-            <div ref={contentRef} className="h-screen overflow-x-hidden overflow-y-scroll scroll-smooth [perspective:1px] [transform-style:preserve-3d]">
-              {/* Parallax Cards Section */}
-              <div className="pdf-cards-container flex flex-1 relative z-[-1] h-screen justify-center items-center [transform:translateZ(-1px)_scale(2)] bg-[rgb(250,228,216)]">
-                <div className="flex flex-col items-center">
-                  <h2 className="text-3xl font-bold text-gray-800 mb-8">Your Emotion Cards</h2>
-                  <div className="flex justify-center gap-8">
-                    {cards.map((card, index) => (
-                      <div key={index}>
-                        <EmotionCard 
-                          emotion={card.emotion} 
-                          definition={card.definition} 
-                          isModal={true}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="absolute bottom-15 right-15 text-gray-500 text-md animate-bounce">
-                    Keep scrolling ↓
-                  </div>
-                </div>
-              </div>
-
-              {/* Content Section */}
-              <div className="pdf-content-container relative block bg-white z-[1] min-h-screen p-8">
-                <div className="grid grid-cols-[200px_1fr] gap-8">
-                  {/* Navigation Bar */}
-                  <div className="sticky top-8 h-fit">
-                    <nav className="space-y-4">
-                      <a 
-                        href="#overall-analysis" 
-                        onClick={(e) => handleNavClick(e, 'overall-analysis')}
-                        className="block text-gray-600 hover:text-blue-500 transition-colors"
-                      >
-                        Overall Analysis
-                      </a>
-                      <a 
-                        href="#key-insights" 
-                        onClick={(e) => handleNavClick(e, 'key-insights')}
-                        className="block text-gray-600 hover:text-blue-500 transition-colors"
-                      >
-                        Key Insights
-                      </a>
-                      <a 
-                        href="#moving-forward" 
-                        onClick={(e) => handleNavClick(e, 'moving-forward')}
-                        className="block text-gray-600 hover:text-blue-500 transition-colors"
-                      >
-                        Moving Forward
-                      </a>
-                    </nav>
-                  </div>
-
-                  {/* Main Content */}
-                  <div>
-                    <h2 className="text-2xl font-semibold mb-8 text-center">Your Emotion Reading Summary</h2>
-
-                    <div className="space-y-4">
-                      {accumulated_text && (
-                        <div id="what-you-shared" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
-                          <h3 className="text-xl font-medium mb-4">What You Shared</h3>
-                          <div className="text-gray-700">
-                            <p className="whitespace-pre-wrap">{accumulated_text}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div id="overall-analysis" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
-                        <h3 className="text-xl font-medium mb-4">Overall Analysis</h3>
-                        {summaryReport?.keyInsightsSummary ? (
-                          <div className="text-gray-700 space-y-4">
-                            {summaryReport.keyInsightsSummary.split('\n\n').map((section, index) => {
-                              // Check if section starts with ** and ends with **
-                              if (section.startsWith('**') && section.endsWith('**')) {
-                                return (
-                                  <h4 key={index} className="font-bold text-lg">
-                                    {section.replace(/\*\*/g, '')}
-                                  </h4>
-                                );
-                              }
-                              // Check if section starts with a number and period
-                              if (/^\d+\.\s/.test(section)) {
-                                return (
-                                  <div key={index} className="ml-4">
-                                    <p>{section}</p>
-                                  </div>
-                                );
-                              }
-                              return <p key={index}>{section}</p>;
-                            })}
-                          </div>
-                        ) : (
-                          summaryReport?.overallAnalysis?.map((paragraph, index) => (
-                            <p key={index} className="text-gray-700 mb-4">
-                              {paragraph}
-                            </p>
-                          ))
-                        )}
-                      </div>
-
-                      <div id="key-insights" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
-                        <h3 className="text-xl font-medium mb-4">Key Insights</h3>
-                        <ul className="list-disc list-inside text-gray-700 space-y-2">
-                          {summaryReport?.keyInsights?.map((insight, index) => (
-                            <li key={index}>{insight}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div id="moving-forward" className="bg-white/60 p-6 rounded-lg scroll-mt-8 transition-opacity duration-300">
-                        <h3 className="text-xl font-medium mb-4">Moving Forward</h3>
-                        {summaryReport?.movingForward?.map((paragraph, index) => (
-                          <p key={index} className="text-gray-700 mb-4">
-                            {paragraph}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Close and Download Buttons */}
-                    <div className="mt-6 flex justify-center gap-4">
-                      <PDFDownloadLink
-                        document={<EmotionSummaryDocument cards={cards} summaryReport={summaryReport} />}
-                        fileName="emotion-summary.pdf"
-                        className="px-8 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center gap-2"
-                      >
-                        {({ loading }) => (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                            {loading ? 'Preparing PDF...' : 'Download PDF'}
-                          </>
-                        )}
-                      </PDFDownloadLink>
-                      <button
-                        onClick={onClose}
-                        className="px-8 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                      >
-                        Close Summary
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {summaryState.isOpen && (
+        <div className="fixed inset-0 z-[1000] backdrop-blur-md flex items-center justify-center">
+          <div className="w-full h-full bg-white/40 backdrop-blur flex">
+            <SummaryContent
+              accumulated_text={summaryState.accumulatedText}
+              summaryReport={summaryState.summaryReport}
+              cards={summaryState.cards}
+              onClose={handleClose}
+            />
           </div>
         </div>
       )}
     </AnimatePresence>
-  )
-}
+  );
+};
 
-export default Summary
+export default Summary;

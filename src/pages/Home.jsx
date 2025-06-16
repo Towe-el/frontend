@@ -1,107 +1,148 @@
-import { useState, useRef, useEffect } from 'react'
+import { useRef } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import Wheel from '../components/wheel/Wheel'
 import Navbar from '../components/navbar/Navbar'
 import ProductIntroModal from '../components/product-intro/ProductIntroModal'
 import DialogueModal from '../components/dialogue/DialogueModal'
-import Assistant from '../components/assistant/Assistant'
+import ReadyModal from '../components/dialogue/ReadyModal'
+import { simulatedEmotionData } from '../data/emotionData'
+import {
+  setEmotions,
+  setSummaryReport,
+  setAccumulatedText,
+  setTitle,
+  setHighlightedCards,
+} from '../store/slices/emotionSlice'
+import {
+  setShowIntro,
+  setShowDialogue,
+  setShowReady,
+  closeAllModals,
+} from '../store/slices/uiSlice'
 
 function Home() {
-  const [showIntro, setShowIntro] = useState(true);
-  const [showDialogue, setShowDialogue] = useState(false);
-  const [showAssistant, setShowAssistant] = useState(false);
-  const [emotionData, setEmotionData] = useState(null);
-  const [summaryData, setSummaryData] = useState(null);
+  const dispatch = useDispatch();
   const wheelRef = useRef();
-  const [shouldScroll, setShouldScroll] = useState(false);
+  const dialogueRef = useRef();
+
+  // Select state from Redux store
+  const {
+    showIntro,
+    showDialogue,
+    showReady,
+  } = useSelector((state) => state.ui);
+
+  const {
+    emotions: emotionData,
+    summaryReport: summaryData,
+    title,
+    accumulatedText,
+    highlightedCards,
+  } = useSelector((state) => state.emotion);
 
   const handleGetStarted = () => {
-    setShowIntro(false);
-    setShowDialogue(true);
+    console.log('Home: Get started clicked');
+    dispatch(setShowIntro(false));
+    dispatch(setShowDialogue(true));
   };
 
   const handleExplore = () => {
-    setShowIntro(false);
-    setShowAssistant(true);
+    console.log('Home: Explore clicked');
+    dispatch(setShowIntro(false));
   };
 
   const handleCloseDialogue = () => {
-    setShowDialogue(false);
+    console.log('Home: Closing dialogue');
+    dispatch(closeAllModals());
   };
 
-  const handleOpenDialogue = () => {
-    setShowDialogue(true);
+  const handleCloseReady = () => {
+    console.log('Home: Closing ready modal');
+    dispatch(setShowReady(false));
   };
 
-  const handleEmotionsAnalyzed = (emotions, summaryReport) => {
-    setEmotionData(emotions);
-    setSummaryData(summaryReport);
-    setShouldScroll(true);
-
-    console.log('Emotions analyzed in Home:', emotions);
-    console.log('Summary report in Home:', summaryReport);
-  };
-
-  // Separate effect for handling scroll
-  useEffect(() => {
-    if (shouldScroll && wheelRef.current) {
-      console.log('📌 Attempting to scroll to wheel');
+  const handleEmotionsAnalyzed = async (emotions, summaryReport, accumulated_text, title_text) => {
+    console.log('Home: Emotions analyzed', { emotions, summaryReport, title_text });
+    try {
+      // First update the data
+      console.log('Home: Setting emotion data:', emotions);
+      dispatch(setEmotions(emotions));
+      dispatch(setSummaryReport(summaryReport));
+      dispatch(setAccumulatedText(accumulated_text));
+      dispatch(setTitle(title_text));
       
-      const scrollToWheel = () => {
-        if (wheelRef.current) {
-          const wheelElement = wheelRef.current;
-          const wheelPosition = wheelElement.getBoundingClientRect().top + window.pageYOffset;
-          
-          window.scrollTo({
-            top: wheelPosition,
-            behavior: 'smooth'
-          });
-          
-          console.log('📌 Scrolled to wheel position:', wheelPosition);
-        }
-      };
+      // Calculate indices for highlighted cards
+      const indices = emotions.map(emotion => {
+        const index = simulatedEmotionData.findIndex(card =>
+          card.emotion.toLowerCase() === emotion.emotion.toLowerCase()
+        );
+        console.log('Home: Found index for emotion', { emotion: emotion.emotion, index });
+        return index;
+      }).filter(index => index !== -1);
 
-      // Try multiple times to ensure scroll works
-      scrollToWheel();
-      const attempts = [100, 300, 500].map(delay => 
-        setTimeout(scrollToWheel, delay)
-      );
+      console.log('Home: Setting highlighted cards indices:', indices);
+      dispatch(setHighlightedCards(indices));
       
-      // Reset scroll trigger
-      setShouldScroll(false);
-      
-      return () => attempts.forEach(clearTimeout);
+      // Then close both modals
+      dispatch(closeAllModals());
+    } catch (error) {
+      console.error('Home: Error handling emotions analysis:', error);
     }
-  }, [shouldScroll]);
+  };
+
+  const handleSearch = async () => {
+    console.log('Home: Starting emotion analysis');
+    if (dialogueRef.current) {
+      await dialogueRef.current.handleEmotionAnalysis();
+    }
+  };
+
+  console.log('Home: Current state', { 
+    showIntro, 
+    showDialogue, 
+    showReady,
+    highlightedCards,
+    emotionData,
+    title
+  });
 
   return (
     <div className="h-screen w-full overflow-x-hidden">
       <Navbar />
       <div className="relative">
-        {/* Intro Section */}
-        <div className={`h-screen w-full transition-transform duration-500 ${showIntro ? 'translate-y-0' : '-translate-y-full'}`}>
-          <ProductIntroModal 
-            isOpen={showIntro}
-            onGetStarted={handleGetStarted}
-            onExplore={handleExplore}
-          />
-        </div>
-        
-        {/* Wheel Section */}
         <div className="h-screen w-full" ref={wheelRef}>
           <Wheel
             emotions={emotionData}
             summary={summaryData}
-            showDialogue={false}
+            title={title}
+            showDialogue={showDialogue}
+            highlightedCards={highlightedCards}
+            accumulated_text={accumulatedText}
           />
         </div>
+        
+        {showIntro && (
+          <div className="fixed inset-0 z-[1000]">
+            <ProductIntroModal 
+              onGetStarted={handleGetStarted}
+              onExplore={handleExplore}
+            />
+          </div>
+        )}
       </div>
       
       <DialogueModal
         isOpen={showDialogue}
         onClose={handleCloseDialogue}
         onEmotionsAnalyzed={handleEmotionsAnalyzed}
+        ref={dialogueRef}
       />
-      {showAssistant && <Assistant onOpenDialogue={handleOpenDialogue} />}
+
+      <ReadyModal
+        isOpen={showReady}
+        onClose={handleCloseReady}
+        onSearch={handleSearch}
+      />
     </div>
   );
 }

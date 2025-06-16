@@ -1,9 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
+import SummaryContent from '../summary/SummaryContent'
+import { useDispatch } from 'react-redux'
+import { setSummaryOpen } from '../../store/slices/summarySlice'
 
-const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, summaryReport }) => {
+const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }) => {
   const dialogueRef = useRef(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const dispatch = useDispatch();
   
   const readingSteps = [
     {
@@ -58,6 +63,14 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, 
   }, [isOpen]);
 
   const handleNextCard = () => {
+    console.log('handleNextCard called, isLastCard:', isLastCard);
+    
+    if (isLastCard) {
+      console.log('Processing last card...');
+      // Only open the summary, data should already be in Redux
+      dispatch(setSummaryOpen(true));
+      console.log('Summary opened');
+    }
     onClose();
   };
 
@@ -168,6 +181,19 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard, 
             </div>
           </motion.div>
         </motion.div>
+      )}
+      {showSummary && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <SummaryContent
+              accumulated_text={emotionData.accumulated_text}
+              summaryReport={emotionData.summaryReport}
+              cards={emotionData.cards}
+              onClose={() => setShowSummary(false)}
+              showSharedContent={false}
+            />
+          </div>
+        </div>
       )}
     </AnimatePresence>
   )
