@@ -46,8 +46,8 @@ function Info() {
           <h2 className="text-2xl font-bold mb-6">Who We Are</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 text-center">
             <div>
-              <img src={Eleanor} alt="Eleanor" className="mx-auto mb-2 w-40 h-40 object-cover" />
-              <p className="font-semibold">Eleanor</p>
+              <img src={Eleanor} alt="Jingchang" className="mx-auto mb-2 w-40 h-40 object-cover" />
+              <p className="font-semibold">Jingchang</p>
               <p className="text-sm text-gray-600">Back-end Engineer</p>
             </div>
             <div>

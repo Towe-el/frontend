@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
+// eslint-disable-next-line no-unused-vars
 import { motion, useAnimate, AnimatePresence } from 'framer-motion'
+import { useDispatch, useSelector } from 'react-redux'
 import { analyzeEmotions } from '../../services/api'
 import { API_BASE_URL } from '../../services/api'
 import { checkMicrophonePermission, startRecording } from '../../utils/speechToText'
@@ -9,6 +11,22 @@ import { LoadingAnimation } from '../../animations/LoadingAnimation'
 import ReadyModal from './ReadyModal'
 import LogoImage2 from '../../assets/LogoImage2.png'
 import { structureSummaryReport, createReadingObject } from '../../utils/summaryReportUtils'
+import { analyzeEmotionData } from '../../services/emotionAnalysis'
+import {
+  setMessages,
+  addMessage,
+  setInput,
+  setPendingResponse,
+  setShowHistory,
+  setIsRecording,
+  setHasPermission,
+  setInitialAnalysis,
+  setHasProcessedMessage,
+  setNeedsMoreDetail,
+  setShowReadyModal,
+  setSessionId,
+  resetDialogueState,
+} from '../../store/slices/dialogueSlice'
 
 const LoadingDots = () => {
   return (
@@ -70,115 +88,129 @@ const DownloadIcon = () => (
   </svg>
 )
 
-const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [pendingResponse, setPendingResponse] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
-  const [hasPermission, setHasPermission] = useState(null)
-  const [initialAnalysis, setInitialAnalysis] = useState(null)
-  const [hasProcessedMessage, setHasProcessedMessage] = useState(false)
-  const [needsMoreDetail, setNeedsMoreDetail] = useState(false)
-  const [showReadyModal, setShowReadyModal] = useState(false)
-  const [sessionId, setSessionId] = useState(null);
-  const mediaRecorderRef = useRef(null)
-  const [scope, animate] = useAnimate()
-  const containerRef = useRef(null)
+const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) => {
+  const dispatch = useDispatch();
+  const mediaRecorderRef = useRef(null);
+  const [scope, animate] = useAnimate();
+  const containerRef = useRef(null);
+  const processingRef = useRef(false);
 
-  // Reset state when modal opens
+  // Select state from Redux store
+  const {
+    messages,
+    input,
+    pendingResponse,
+    showHistory,
+    isRecording,
+    hasPermission,
+    initialAnalysis,
+    // eslint-disable-next-line no-unused-vars
+    needsMoreDetail,
+    // eslint-disable-next-line no-unused-vars
+    showReadyModal,
+    sessionId,
+  } = useSelector((state) => state.dialogue);
+
+  // Reset processing state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setMessages([])
-      setInput('')
-      setPendingResponse(false);
-      setSessionId(null);
+      processingRef.current = false;
+      dispatch(resetDialogueState());
 
       // Fetch session_id from new API
-    fetch(`${API_BASE_URL}/search/session`)
-      .then(res => res.json())
-      .then(data => {
-        if(data.session_id){
-          console.log('📦 New session ID:', data.session_id);
-          setSessionId(data.session_id);
-        }
-      })
-      .catch(err => {
-        console.error('❌ Failed to get session ID', err);
-      });
+      fetch(`${API_BASE_URL}/search/session`)
+        .then(res => res.json())
+        .then(data => {
+          if(data.session_id){
+            console.log('📦 New session ID:', data.session_id);
+            dispatch(setSessionId(data.session_id));
+          }
+        })
+        .catch(err => {
+          console.error('❌ Failed to get session ID', err);
+        });
     }
-  }, [isOpen])
+  }, [isOpen, dispatch]);
 
   // Check microphone permission on mount
   useEffect(() => {
     if (isOpen) {
-      checkMicrophonePermission().then(setHasPermission)
+      checkMicrophonePermission().then(permission => {
+        dispatch(setHasPermission(permission));
+      });
     }
-  }, [isOpen])
+  }, [isOpen, dispatch]);
 
-  const handleStartRecording = async () => {
-    try {
-      const recorder = await startRecording(
-        // onInterimResult callback
-        (transcript) => {
-          setInput(transcript)
-        },
-        // onFinalResult callback
-        (transcript) => {
-          setInput(transcript)
-        }
-      )
-      mediaRecorderRef.current = recorder
-      setIsRecording(true)
-    } catch (error) {
-      console.error('Error starting recording:', error)
-      setMessages(prev => [
-        ...prev,
-        { 
-          sender: 'ai', 
-          text: "I'm sorry, I couldn't access your microphone. Please check your permissions and try again." 
-        }
-      ])
-    }
-  }
+  // Handle AI response and emotion analysis
+  useEffect(() => {
+    if (!pendingResponse || !sessionId || processingRef.current) return;
 
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
-      // Send the final transcript if there's any input
-      if (input.trim()) {
-        const userMessage = { sender: 'user', text: input }
-        setMessages(prev => [...prev, userMessage])
-        setPendingResponse(true)
-        setInput('') // Clear the input box immediately after sending
+    const analyzeEmotionsFromText = async () => {
+      try {
+        processingRef.current = true;
+        const lastUserMessage = messages.filter(msg => msg.sender === 'user').pop()?.text;
+        if (!lastUserMessage) return;
+
+        const result = await analyzeEmotions(lastUserMessage, sessionId);
+        const ready = result.ready_for_search === true;
+        const isGuidanceReady = result.guidance_response?.toLowerCase().includes("ready for analysis");
+        const hasText = !!result.accumulated_text;
+
+        console.log('API Response:', result);
+        dispatch(setInitialAnalysis(result));
+
+        const moreDetail = result.needs_more_detail === true;
+        dispatch(setNeedsMoreDetail(moreDetail));
+
+        if (result.guidance_response) {
+          dispatch(addMessage({ sender: 'ai', text: result.guidance_response }));
+        }
+
+        if (!moreDetail && (ready || isGuidanceReady) && sessionId && hasText) {
+          console.log('✅ ✅ Ready for search (fallback via guidance), showing ReadyModal');
+          setTimeout(() => dispatch(setShowReadyModal(true)), 300);
+        } else {
+          console.log('⚠️ Not ready for search:', {
+            needsMoreDetail: moreDetail,
+            readyForSearch: ready,
+            hasSessionId: !!sessionId
+          });
+        }
+
+      } catch (error) {
+        console.error('❌ Error analyzing emotions:', error);
+
+        const fallbackMessage = error.message.includes('Network')
+          ? "I'm having trouble connecting to the network. Please check your connection and try again."
+          : "I'm sorry, I had trouble analyzing your emotions. Could you try again?";
+
+        dispatch(addMessage({ sender: 'ai', text: fallbackMessage }));
+      } finally {
+        dispatch(setPendingResponse(false));
+        dispatch(setHasProcessedMessage(true));
+        processingRef.current = false;
       }
-    }
-  }
+    };
 
-  const scrollToBottom = async () => {
-    const container = containerRef.current
-    if (container) {
-      await animate(container, {
-        scrollTop: container.scrollHeight
-      }, { duration: 0.6, ease: [0.17, 0.67, 0.83, 0.67] })
-    }
-  }
+    analyzeEmotionsFromText();
+  }, [pendingResponse, sessionId, messages, dispatch]);
 
   const handleSearch = async () => {
-    if (!sessionId || !initialAnalysis){
+    if (!sessionId || !initialAnalysis) {
       console.warn('❌ Cannot run search: missing sessionId or analysis');
       return;
-    };
+    }
 
     try {
       console.log('🔍 Starting search with session id:', sessionId);
+      console.log('🔍 Initial analysis:', initialAnalysis);
+      
       const searchResult = await analyzeEmotions(messages[messages.length - 1].text, 
         sessionId,
         {
-        execute_search: true,
-        accumulated_text: initialAnalysis.accumulated_text
-      });
+          execute_search: true,
+          accumulated_text: initialAnalysis.accumulated_text
+        });
 
       console.log('✅ Search result received:', searchResult);
 
@@ -199,19 +231,23 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
         console.log('✅ Processed summary report:', summaryReport);
 
         if (onEmotionsAnalyzed) {
+          // Close ReadyModal first
+          dispatch(setShowReadyModal(false));
+          
+          // Then call onEmotionsAnalyzed
           await onEmotionsAnalyzed(emotions, summaryReport, initialAnalysis.accumulated_text);
           console.log('✅ onEmotionsAnalyzed called successfully');
 
           // Create reading object using the utility function
           const newReading = createReadingObject(searchResult, emotions, initialAnalysis.accumulated_text);
 
-          // 🗃 Save to localStorage
+          // Save to localStorage
           const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
           localStorage.setItem('emotionReadings', JSON.stringify([...prev, newReading]));
 
           console.log('💾 Saved session to localStorage');
 
-          setShowReadyModal(false);
+          // Close DialogueModal
           onClose();
         } else {
           console.warn('❌ onEmotionsAnalyzed callback not defined');
@@ -231,120 +267,85 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
         stack: error.stack,
         response: error.response
       });
-      setMessages(prev => [
-        ...prev,
-        { 
-          sender: 'ai', 
-          text: "I'm sorry, I had trouble searching for similar experiences. Could you try again?" 
-        }
-      ]);
+      dispatch(addMessage({ 
+        sender: 'ai', 
+        text: "I'm sorry, I had trouble searching for similar experiences. Could you try again?" 
+      }));
     } finally {
-      setPendingResponse(false);
-      setInitialAnalysis(null);
+      dispatch(setPendingResponse(false));
+      dispatch(setInitialAnalysis(null));
     }
   };
-
-  const scrollToWheel = () => {
-    const wheelSection = document.querySelector('.wheel-container');
-    if (wheelSection) {
-      wheelSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  // Handle AI response and emotion analysis
-  useEffect(() => {
-    if (!pendingResponse || hasProcessedMessage || !sessionId) return;
-      const analyzeEmotionsFromText = async () => {
-    try {
-      if (!sessionId) {
-        console.warn("⏳ No sessionId — aborting analysis");
-        return;
-      }
-    const lastUserMessage = [...messages].reverse().find(msg => msg.sender === 'user')?.text;
-    if (!lastUserMessage) return;
-
-    const result = await analyzeEmotions(lastUserMessage, sessionId);
-    const ready = result.ready_for_search === true;
-    const isGuidanceReady = result.guidance_response?.toLowerCase().includes("ready for analysis");
-    const hasText = !!result.accumulated_text;
-
-//     console.log('🔍 API result flags:', {
-//   readyForSearchRaw: result.ready_for_search,
-//   readyParsed: ready,
-//   needsMoreDetail: result.needs_more_detail,
-//   sessionId: result.session_id,
-//   accumulatedText: result.accumulated_text,
-// });
-
-    console.log('API Response:', result);
-    setInitialAnalysis(result);
-
-    const moreDetail = result.needs_more_detail === true;
-    setNeedsMoreDetail(moreDetail);
-
-    if (result.guidance_response) {
-      setMessages(prev => [
-        ...prev,
-        { sender: 'ai', text: result.guidance_response }
-      ]);
-    }
-
-    if (!moreDetail && (ready || isGuidanceReady) && sessionId && hasText) {
-      console.log('✅ ✅ Ready for search (fallback via guidance), showing ReadyModal');
-      setTimeout(() => setShowReadyModal(true), 300);
-    } else {
-      console.log('⚠️ Not ready for search:', {
-        needsMoreDetail: moreDetail,
-        readyForSearch: ready,
-        hasSessionId: !!sessionId
-      });
-    }
-
-  } catch (error) {
-    console.error('❌ Error analyzing emotions:', error);
-
-    const fallbackMessage = error.message.includes('Network')
-      ? "I'm having trouble connecting to the network. Please check your connection and try again."
-      : "I'm sorry, I had trouble analyzing your emotions. Could you try again?";
-
-    setMessages(prev => [
-      ...prev,
-      { sender: 'ai', text: fallbackMessage }
-    ]);
-  } finally {
-    setPendingResponse(false);
-    setHasProcessedMessage(true);
-  }
-};
-
-      analyzeEmotionsFromText();
-  }, [pendingResponse, messages, hasProcessedMessage, sessionId]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || pendingResponse || processingRef.current) return;
   
-    const userMessage = { sender: 'user', text: input };
-  
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setPendingResponse(true);
-    setHasProcessedMessage(false);      // Reset processing state
-    setNeedsMoreDetail(false);          // Reset the need for more input
+    dispatch(setPendingResponse(true));
+    dispatch(setHasProcessedMessage(false));
+    dispatch(setNeedsMoreDetail(false));
+    
+    dispatch(addMessage({ sender: 'user', text: input }));
+    dispatch(setInput(''));
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      const recorder = await startRecording(
+        // onInterimResult callback
+        (transcript) => {
+          dispatch(setInput(transcript));
+        },
+        // onFinalResult callback
+        (transcript) => {
+          dispatch(setInput(transcript));
+        }
+      );
+      mediaRecorderRef.current = recorder;
+      dispatch(setIsRecording(true));
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      dispatch(addMessage({ 
+        sender: 'ai', 
+        text: "I'm sorry, I couldn't access your microphone. Please check your permissions and try again." 
+      }));
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      dispatch(setIsRecording(false));
+      // Send the final transcript if there's any input
+      if (input.trim()) {
+        dispatch(addMessage({ sender: 'user', text: input }));
+        dispatch(setPendingResponse(true));
+        dispatch(setInput('')); // Clear the input box immediately after sending
+      }
+    }
+  };
+
+  const scrollToBottom = async () => {
+    const container = containerRef.current;
+    if (container) {
+      await animate(container, {
+        scrollTop: container.scrollHeight
+      }, { duration: 0.6, ease: [0.17, 0.67, 0.83, 0.67] });
+    }
   };
 
   // Scroll to bottom when messages change or when pending response changes
   useEffect(() => {
     if (isOpen) {
-      setTimeout(scrollToBottom, 100)
+      setTimeout(scrollToBottom, 100);
     }
-  }, [messages, pendingResponse, isOpen])
+  }, [messages, pendingResponse, isOpen]);
 
   // Handle initial AI message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages(prev => [...prev, initialAiMessages[0]])
+      dispatch(setMessages([...initialAiMessages]));
     }
-  }, [isOpen, messages.length])
+  }, [isOpen, messages.length, dispatch]);
 
   // Function to format message text with bold and line breaks
   const formatMessageText = (text) => {
@@ -367,21 +368,94 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
     });
   };
 
+  const handleClose = () => {
+    console.log('DialogueModal: Close button clicked');
+    dispatch(resetDialogueState());
+    onClose();
+  };
+
+  const handleEmotionAnalysis = async () => {
+    try {
+      if (!sessionId || !initialAnalysis) {
+        console.warn('❌ Cannot run emotion analysis: missing sessionId or analysis');
+        return;
+      }
+
+      const lastMessage = messages[messages.length - 1]?.text;
+      if (!lastMessage) {
+        console.warn('❌ No message found for emotion analysis');
+        return;
+      }
+
+      console.log('🔍 Starting emotion analysis with:', {
+        sessionId,
+        lastMessage,
+        initialAnalysis
+      });
+
+      const result = await analyzeEmotionData(lastMessage, sessionId, initialAnalysis);
+
+      if (!result) {
+        console.warn('❌ No result returned from emotion analysis');
+        return;
+      }
+
+      if (result && onEmotionsAnalyzed) {
+        // Close ReadyModal first
+        dispatch(setShowReadyModal(false));
+        
+        // Then call onEmotionsAnalyzed
+        await onEmotionsAnalyzed(result.emotions, result.summaryReport, result.accumulatedText);
+        console.log('✅ onEmotionsAnalyzed called successfully');
+
+        // Save to localStorage
+        const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
+        localStorage.setItem('emotionReadings', JSON.stringify([...prev, result.reading]));
+
+        console.log('💾 Saved session to localStorage');
+
+        // Close DialogueModal
+        onClose();
+      }
+    } catch (error) {
+      console.error('❌ Error during emotion analysis:', error);
+      dispatch(addMessage({ 
+        sender: 'ai', 
+        text: "I'm sorry, I had trouble analyzing your emotions. Could you try again?" 
+      }));
+    } finally {
+      dispatch(setPendingResponse(false));
+      dispatch(setInitialAnalysis(null));
+    }
+  };
+
+  // Expose both functions through ref
+  useImperativeHandle(ref, () => ({
+    handleSearch,
+    handleEmotionAnalysis
+  }));
+
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isOpen && (
-          <div
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[1000] backdrop-blur-md flex items-center justify-center"
           >
-            <div
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               className="w-full h-full flex flex-col bg-white/40 shadow-lg backdrop-blur"
               ref={scope}
             >
               <div className="flex justify-between items-center p-4">
                 <button
                   className="text-gray-500 hover:text-black text-5xl m-8"
-                  onClick={onClose}
+                  onClick={handleClose}
                 >
                   ×
                 </button>
@@ -476,11 +550,11 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                         <textarea
                           className="w-full bg-white/60 rounded-lg px-3 py-2 text-base min-h-[200px] resize-none border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none pr-24"
                           value={input}
-                          onChange={(e) => setInput(e.target.value)}
+                          onChange={(e) => dispatch(setInput(e.target.value))}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault()
-                              sendMessage()
+                              e.preventDefault();
+                              sendMessage();
                             }
                           }}
                           placeholder={isRecording ? "Listening..." : "Type your message..."}
@@ -517,7 +591,7 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowHistory(!showHistory)}
+                        onClick={() => dispatch(setShowHistory(!showHistory))}
                         className="text-sm text-gray-600 hover:text-gray-800 self-center"
                       >
                         {showHistory ? 'Hide History' : 'Check History'}
@@ -526,22 +600,13 @@ const DialogueModal = ({ isOpen, onClose, onEmotionsAnalyzed }) => {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
-      <ReadyModal 
-        isOpen={showReadyModal}
-        onClose={() => {
-          setSessionId(null);
-          setShowReadyModal(false);
-          onClose();
-        }}
-        onSearch={handleSearch}
-        onEmotionsAnalyzed={onEmotionsAnalyzed}
-      />
+      <ReadyModal onSearch={handleEmotionAnalysis} onClose={onClose} />
     </>
-  )
-}
+  );
+});
 
-export default DialogueModal
+export default DialogueModal;

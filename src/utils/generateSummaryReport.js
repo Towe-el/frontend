@@ -8,7 +8,8 @@ export function generateSummaryReport(emotions, searchResult, userInput = '') {
     };
   }
 
-  return {
+  // Generate a structured summary report
+  const summaryReport = {
     inputText: userInput,
     overallAnalysis: [
       `Based on your input, we've identified ${emotions.length} primary emotions that you're experiencing.`,
@@ -21,6 +22,15 @@ export function generateSummaryReport(emotions, searchResult, userInput = '') {
       'Understanding your emotions is the first step toward emotional well-being.',
       'Consider discussing these feelings with someone you trust.',
       "Remember that it's okay to feel this way, and you're not alone in your experience."
-    ]
+    ],
+    timestamp: Date.now(),
+    emotions: emotions.map(e => ({
+      emotion: e.emotion,
+      percentage: e.percentage,
+      analysis: e.analysis,
+      quote: e.quote
+    }))
   };
+
+  return summaryReport;
 }

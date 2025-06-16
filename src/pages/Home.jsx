@@ -1,52 +1,75 @@
-import { useState, useRef, useEffect } from 'react'
+import { useRef } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import Wheel from '../components/wheel/Wheel'
 import Navbar from '../components/navbar/Navbar'
 import ProductIntroModal from '../components/product-intro/ProductIntroModal'
 import DialogueModal from '../components/dialogue/DialogueModal'
 import ReadyModal from '../components/dialogue/ReadyModal'
 import { simulatedEmotionData } from '../data/emotionData'
+import {
+  setEmotions,
+  setSummaryReport,
+  setAccumulatedText,
+  setTitle,
+  setHighlightedCards,
+} from '../store/slices/emotionSlice'
+import {
+  setShowIntro,
+  setShowDialogue,
+  setShowReady,
+  closeAllModals,
+} from '../store/slices/uiSlice'
 
 function Home() {
-  const [showIntro, setShowIntro] = useState(true);
-  const [showDialogue, setShowDialogue] = useState(false);
-  const [showReady, setShowReady] = useState(false);
-  const [emotionData, setEmotionData] = useState([]);
-  const [summaryData, setSummaryData] = useState(null);
-  const [accumulatedText, setAccumulatedText] = useState('');
-  const [highlightedCards, setHighlightedCards] = useState([]);
+  const dispatch = useDispatch();
   const wheelRef = useRef();
   const dialogueRef = useRef();
 
+  // Select state from Redux store
+  const {
+    showIntro,
+    showDialogue,
+    showReady,
+  } = useSelector((state) => state.ui);
+
+  const {
+    emotions: emotionData,
+    summaryReport: summaryData,
+    title,
+    accumulatedText,
+    highlightedCards,
+  } = useSelector((state) => state.emotion);
+
   const handleGetStarted = () => {
     console.log('Home: Get started clicked');
-    setShowIntro(false);
-    setShowDialogue(true);
+    dispatch(setShowIntro(false));
+    dispatch(setShowDialogue(true));
   };
 
   const handleExplore = () => {
     console.log('Home: Explore clicked');
-    setShowIntro(false);
+    dispatch(setShowIntro(false));
   };
 
   const handleCloseDialogue = () => {
     console.log('Home: Closing dialogue');
-    setShowDialogue(false);
-    setShowReady(false);
+    dispatch(closeAllModals());
   };
 
   const handleCloseReady = () => {
     console.log('Home: Closing ready modal');
-    setShowReady(false);
+    dispatch(setShowReady(false));
   };
 
-  const handleEmotionsAnalyzed = async (emotions, summaryReport, accumulated_text) => {
-    console.log('Home: Emotions analyzed', { emotions, summaryReport });
+  const handleEmotionsAnalyzed = async (emotions, summaryReport, accumulated_text, title_text) => {
+    console.log('Home: Emotions analyzed', { emotions, summaryReport, title_text });
     try {
       // First update the data
       console.log('Home: Setting emotion data:', emotions);
-      setEmotionData(emotions);
-      setSummaryData(summaryReport);
-      setAccumulatedText(accumulated_text);
+      dispatch(setEmotions(emotions));
+      dispatch(setSummaryReport(summaryReport));
+      dispatch(setAccumulatedText(accumulated_text));
+      dispatch(setTitle(title_text));
       
       // Calculate indices for highlighted cards
       const indices = emotions.map(emotion => {
@@ -58,33 +81,20 @@ function Home() {
       }).filter(index => index !== -1);
 
       console.log('Home: Setting highlighted cards indices:', indices);
-      setHighlightedCards(indices);
+      dispatch(setHighlightedCards(indices));
       
       // Then close both modals
-      console.log('Home: Setting showReady to false');
-      setShowReady(false);
-      console.log('Home: Setting showDialogue to false');
-      setShowDialogue(false);
+      dispatch(closeAllModals());
     } catch (error) {
       console.error('Home: Error handling emotions analysis:', error);
     }
   };
 
-  // Add debug log for emotionData changes
-  useEffect(() => {
-    console.log('Home: emotionData updated:', emotionData);
-  }, [emotionData]);
-
   const handleSearch = async () => {
-    console.log('Home: Starting search');
+    console.log('Home: Starting emotion analysis');
     if (dialogueRef.current) {
-      await dialogueRef.current.handleSearch();
+      await dialogueRef.current.handleEmotionAnalysis();
     }
-  };
-
-  const clearHighlightedCards = () => {
-    console.log('Home: Clearing highlighted cards');
-    setHighlightedCards([]);
   };
 
   console.log('Home: Current state', { 
@@ -92,7 +102,8 @@ function Home() {
     showDialogue, 
     showReady,
     highlightedCards,
-    emotionData 
+    emotionData,
+    title
   });
 
   return (
@@ -103,9 +114,9 @@ function Home() {
           <Wheel
             emotions={emotionData}
             summary={summaryData}
+            title={title}
             showDialogue={showDialogue}
             highlightedCards={highlightedCards}
-            onClearHighlightedCards={clearHighlightedCards}
             accumulated_text={accumulatedText}
           />
         </div>
@@ -121,10 +132,10 @@ function Home() {
       </div>
       
       <DialogueModal
-        ref={dialogueRef}
         isOpen={showDialogue}
         onClose={handleCloseDialogue}
         onEmotionsAnalyzed={handleEmotionsAnalyzed}
+        ref={dialogueRef}
       />
 
       <ReadyModal

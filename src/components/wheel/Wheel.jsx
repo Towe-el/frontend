@@ -1,43 +1,69 @@
 import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
-import { useAnimation, useMotionValue, motion } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion, useAnimation, useMotionValue } from 'framer-motion';
+import { useSelector, useDispatch } from 'react-redux';
 import CardDetailModal from '../emotion-card/CardDetailModal';
 import CardReading from '../cardReading/CardReading';
 import Summary from '../summary/Summary';
 import DialogueModal from '../dialogue/DialogueModal';
 import WheelCard from './WheelCard';
 import { simulatedEmotionData } from '../../data/emotionData';
+import {
+  setSelectedEmotion,
+  setSelectedCards,
+  setCurrentReadingIndex,
+  setCurrentSummaryReport,
+} from '../../store/slices/emotionSlice';
+import { setSummaryOpen, setSummaryData } from '../../store/slices/summarySlice';
 
-const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClearHighlightedCards, emotions = [], accumulated_text = '' }, ref) => {
-
-  const [selectedEmotion, setSelectedEmotion] = useState(null);
+const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotions = [], accumulated_text = '' }, ref) => {
+  const dispatch = useDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isCardReadingOpen, setIsCardReadingOpen] = useState(false);
-  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-  const [selectedCards, setSelectedCards] = useState([]);
-  const [currentReadingIndex, setCurrentReadingIndex] = useState(0);
   const [isDialogueOpen, setIsDialogueOpen] = useState(showDialogue);
-  const [currentSummaryReport, setCurrentSummaryReport] = useState(null);
 
   const wheelRotation = useMotionValue(0);
   const controls = useAnimation();
   const containerRef = useRef();
   const lastAngle = useRef(null);
 
+  // Select state from Redux store
+  const {
+    selectedEmotion,
+    selectedCards,
+    currentReadingIndex,
+    currentSummaryReport,
+  } = useSelector((state) => state.emotion);
+
+  // Add debug logs for state changes
+  useEffect(() => {
+    console.log('Wheel: State updated:', {
+      selectedEmotion,
+      selectedCards,
+      currentReadingIndex,
+      currentSummaryReport,
+      accumulated_text
+    });
+  }, [selectedEmotion, selectedCards, currentReadingIndex, currentSummaryReport, accumulated_text]);
+
   // Add effect to handle showDialogue prop changes
   useEffect(() => {
+    console.log('Wheel: showDialogue prop changed:', showDialogue);
     setIsDialogueOpen(showDialogue);
   }, [showDialogue]);
 
-  // Effect to handle card highlighting
+  // Effect to handle selected cards changes
   useEffect(() => {
-    console.log('Wheel: Highlighted cards changed', { highlightedCards });
-    if (highlightedCards.length > 0 && !isModalOpen && !isCardReadingOpen && !isSummaryOpen && !isDialogueOpen) {
-      console.log('Wheel: Cards should be highlighted now');
-    }
-  }, [highlightedCards, isModalOpen, isCardReadingOpen, isSummaryOpen, isDialogueOpen]);
+    console.log('Wheel: selectedCards changed:', selectedCards);
+  }, [selectedCards]);
 
-  // Add effect to handle emotions prop changes
+  // Effect to handle currentSummaryReport changes
+  useEffect(() => {
+    console.log('Wheel: currentSummaryReport changed:', currentSummaryReport);
+  }, [currentSummaryReport]);
+
+  // Effect to handle emotions prop changes
   useEffect(() => {
     console.log('Wheel: Emotions prop received:', emotions);
     if (emotions && Array.isArray(emotions)) {
@@ -58,9 +84,9 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
       }).filter(card => card !== null);
 
       console.log('Wheel: Setting selected cards:', newSelectedCards);
-      setSelectedCards(newSelectedCards);
+      dispatch(setSelectedCards(newSelectedCards));
     }
-  }, [emotions]);
+  }, [emotions, dispatch]);
 
   // Expose handleEmotionsAnalyzed through the ref
   useImperativeHandle(ref, () => ({
@@ -91,8 +117,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
         quote: matchingCard.quote || ''
       };
       console.log('Wheel: Setting selected emotion:', emotionData);
-      setSelectedEmotion(emotionData);
-      setCurrentReadingIndex(selectedCards.findIndex(c => c.emotion === card.emotion));
+      dispatch(setSelectedEmotion(emotionData));
+      dispatch(setCurrentReadingIndex(selectedCards.findIndex(c => c.emotion === card.emotion)));
       setIsCardReadingOpen(true);
     } else {
       console.log('Wheel: Creating new emotion data from card:', card);
@@ -106,33 +132,30 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
         quote: card.quote || ''
       };
       console.log('Wheel: Setting selected emotion:', emotionData);
-      setSelectedEmotion(emotionData);
-      setCurrentReadingIndex(0);
-      setIsCardReadingOpen(true);
+      dispatch(setSelectedEmotion(emotionData));
+      setIsModalOpen(true);
     }
   };
 
-  // Add debug logs for state changes
-  useEffect(() => {
-    console.log('Wheel: selectedEmotion updated:', selectedEmotion);
-  }, [selectedEmotion]);
-
-  useEffect(() => {
-    console.log('Wheel: selectedCards updated:', selectedCards);
-  }, [selectedCards]);
-
   const closeModal = () => {
     setIsModalOpen(false);
-    setSelectedEmotion(null);
+    dispatch(setSelectedEmotion(null));
   };
 
   const handleNextCard = () => {
     console.log('Wheel: Moving to next card, current index:', currentReadingIndex);
+    console.log('Wheel: Current state before processing:', {
+      currentSummaryReport,
+      selectedCards,
+      accumulated_text,
+      currentReadingIndex
+    });
+    
     if (currentReadingIndex < selectedCards.length - 1) {
       const nextIndex = currentReadingIndex + 1;
       const nextCard = selectedCards[nextIndex];
       console.log('Wheel: Setting next card:', nextCard);
-      setSelectedEmotion({
+      dispatch(setSelectedEmotion({
         emotion: nextCard.emotion,
         definition: nextCard.definition,
         percentage: nextCard.percentage || 0,
@@ -140,25 +163,49 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
         textColor: nextCard.textColor,
         analysis: nextCard.analysis || '',
         quote: nextCard.quote || ''
-      });
-      setCurrentReadingIndex(nextIndex);
+      }));
+      dispatch(setCurrentReadingIndex(nextIndex));
     } else {
-      console.log('Wheel: Last card reached, closing reading');
+      console.log('Wheel: Last card reached, showing summary');
+      console.log('Wheel: Current state:', {
+        currentSummaryReport,
+        selectedCards,
+        accumulated_text,
+        currentReadingIndex
+      });
+      
       setIsCardReadingOpen(false);
-      setIsSummaryOpen(true);
+      if (!currentSummaryReport || !selectedCards.length) {
+        console.error('Missing data for summary:', {
+          hasSummaryReport: !!currentSummaryReport,
+          cardsCount: selectedCards.length,
+          currentReadingIndex,
+          selectedCards,
+          currentSummaryReport
+        });
+        return;
+      }
+      
+      const summaryData = {
+        cards: selectedCards,
+        accumulatedText: accumulated_text,
+        summaryReport: currentSummaryReport
+      };
+      console.log('Wheel: Setting summary data:', summaryData);
+      
+      dispatch(setSummaryData(summaryData));
+      dispatch(setSummaryOpen(true));
     }
   };
 
   const handleCloseSummary = () => {
-    setIsSummaryOpen(false);
-    setCurrentReadingIndex(0);
-    setSelectedCards([]);
-    onClearHighlightedCards(); // Use the prop to clear highlights
-    setCurrentSummaryReport(null);
+    dispatch(setSummaryOpen(false));
+    dispatch(setCurrentReadingIndex(0));
+    dispatch(setSelectedCards([]));
+    dispatch(setCurrentSummaryReport(null));
   };
 
   const handleAllCardsRead = () => {
-    onClearHighlightedCards();
     setIsCardReadingOpen(false);
   };
 
@@ -168,16 +215,11 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
     handleAllCardsRead();
   };
 
-  const handleBackToWheel = () => {
-    setIsCardReadingOpen(false);
-    onClearHighlightedCards();
-  };
-
   // Function to handle emotions analysis
   const handleEmotionsAnalyzed = async (emotions, summaryReport, newAccumulatedText) => {
     try {
       // Store the summary report
-      setCurrentSummaryReport(summaryReport);
+      dispatch(setCurrentSummaryReport(summaryReport));
 
       if (!emotions || !Array.isArray(emotions) || emotions.length === 0) {
         console.error('❌ Invalid emotions data received:', emotions);
@@ -200,7 +242,7 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
         };
       }).filter(card => card !== null);
 
-      setSelectedCards(newSelectedCards);
+      dispatch(setSelectedCards(newSelectedCards));
 
       // Save to localStorage
       const newReading = {
@@ -218,7 +260,7 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
 
       // Open card reading
       setIsCardReadingOpen(true);
-      setSelectedEmotion({
+      dispatch(setSelectedEmotion({
         emotion: newSelectedCards[0].emotion,
         definition: newSelectedCards[0].definition,
         percentage: newSelectedCards[0].percentage || 0,
@@ -226,8 +268,8 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
         textColor: newSelectedCards[0].textColor,
         analysis: newSelectedCards[0].analysis || '',
         quote: newSelectedCards[0].quote || ''
-      });
-      setCurrentReadingIndex(0);
+      }));
+      dispatch(setCurrentReadingIndex(0));
 
     } catch (error) {
       console.error('❌ Error during emotion analysis:', error);
@@ -238,18 +280,13 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
     }
   };
 
-  // Function to clear card effects
-  const clearCardEffects = () => {
-    onClearHighlightedCards();
-  };
-
   // Modify the Talk to Toweel button click handler
   const handleTalkToToweel = () => {
     setIsDialogueOpen(true);
     // Reset other modal states
     setIsModalOpen(false);
     setIsCardReadingOpen(false);
-    setIsSummaryOpen(false);
+    dispatch(setSummaryOpen(false));
   };
 
   return (
@@ -360,13 +397,7 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], onClear
         isLastCard={currentReadingIndex === selectedCards.length - 1}
       />
 
-      <Summary
-        isOpen={isSummaryOpen}
-        onClose={handleSummaryClose}
-        cards={selectedCards}
-        summaryReport={currentSummaryReport}
-        accumulated_text={accumulated_text}
-      />
+      <Summary />
 
       <DialogueModal
         isOpen={isDialogueOpen}

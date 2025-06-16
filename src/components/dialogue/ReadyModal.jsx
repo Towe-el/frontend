@@ -1,8 +1,13 @@
 import { AnimatePresence } from 'framer-motion'
 import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { LoadingAnimation } from '../../animations/LoadingAnimation';
 import Navbar from '../navbar/Navbar';
 import LogoImage1 from '../../assets/LogoImage1.png';
+import { setShowReadyModal } from '../../store/slices/dialogueSlice';
+import { setSelectedCards, setCurrentSummaryReport } from '../../store/slices/emotionSlice';
+import { setSummaryOpen, setSummaryData } from '../../store/slices/summarySlice';
+import { simulatedEmotionData } from '../../data/emotionData';
 
 const BackIcon = () => (
   <svg 
@@ -15,33 +20,100 @@ const BackIcon = () => (
   </svg>
 )
 
-const ReadyModal = ({ isOpen, onClose, onSearch }) => {
+const ReadyModal = ({ onSearch }) => {
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
+  const showReadyModal = useSelector((state) => state.dialogue.showReadyModal);
+
+  const handleClose = () => {
+    dispatch(setShowReadyModal(false));
+  };
 
   const handleSearch = async () => {
     if (isLoading) return; // Prevent multiple clicks
     
     setIsLoading(true);
     try {
-      await onSearch();
-      // Close modal immediately after search is complete
-      onClose();
+      console.log('ReadyModal: Starting emotion analysis');
+      const result = await onSearch();
+      
+      if (result && result.emotions) {
+        console.log('ReadyModal: Emotion analysis result received:', {
+          emotions: result.emotions,
+          summary_report: result.summary_report,
+          accumulated_text: result.accumulated_text
+        });
+        
+        // Map the emotions to cards and update Redux store
+        const newSelectedCards = result.emotions.map(emotion => {
+          const matchingCard = simulatedEmotionData.find(card =>
+            card.emotion.toLowerCase() === emotion.emotion.toLowerCase()
+          );
+          if (!matchingCard) {
+            console.error('❌ No matching card found for emotion:', emotion.emotion);
+            return null;
+          }
+          return {
+            ...matchingCard,
+            percentage: emotion.percentage,
+            quote: emotion.quote,
+            analysis: emotion.analysis
+          };
+        }).filter(card => card !== null);
+
+        console.log('ReadyModal: Setting selected cards:', newSelectedCards);
+        // Update Redux store with the new cards and summary
+        dispatch(setSelectedCards(newSelectedCards));
+        
+        if (result.summary_report) {
+          console.log('ReadyModal: Setting summary report to Redux:', result.summary_report);
+          dispatch(setCurrentSummaryReport(result.summary_report));
+          // Update summary state in Redux
+          const summaryData = {
+            cards: newSelectedCards,
+            accumulatedText: result.accumulated_text || '',
+            summaryReport: result.summary_report
+          };
+          console.log('ReadyModal: Setting summary data to Redux:', summaryData);
+          dispatch(setSummaryData(summaryData));
+          dispatch(setSummaryOpen(true));
+        } else {
+          console.warn('ReadyModal: No summary_report found in result');
+        }
+
+        // Save to localStorage
+        const newReading = {
+          timestamp: Date.now(),
+          cards: newSelectedCards,
+          summaryReport: result.summary_report,
+          accumulated_text: result.accumulated_text || '',
+        };
+        console.log('ReadyModal: Saving reading to localStorage:', newReading);
+
+        const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
+        localStorage.setItem('emotionReadings', JSON.stringify([...prev, newReading]));
+
+        // Close the ready modal
+        dispatch(setShowReadyModal(false));
+      } else {
+        console.warn('ReadyModal: No emotions data in result:', result);
+      }
     } catch (error) {
-      console.error('Error during search:', error);
+      console.error('ReadyModal: Error during emotion analysis:', error);
       setIsLoading(false);
-      onClose();
+      handleClose();
     }
   };
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {showReadyModal && (
         <div
           className="fixed inset-0 z-[1001] bg-white flex flex-col"
         >
           <Navbar />
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-24 left-8 text-gray-500 hover:text-gray-700 transition-colors z-10"
           >
             <BackIcon />
@@ -74,7 +146,7 @@ const ReadyModal = ({ isOpen, onClose, onSearch }) => {
                     <LoadingAnimation /> Analyzing your emotions...
                   </div>
                 ) : (
-                  "Analyze Emotions"
+                  "Spin the Wheel"
                 )}
               </button>
             </div>

@@ -1,11 +1,14 @@
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import EmotionCard from '../emotion-card/EmotionCard'
 import { useRef, useEffect, useState } from 'react'
 import SummaryContent from '../summary/SummaryContent'
+import { useDispatch } from 'react-redux'
+import { setSummaryOpen } from '../../store/slices/summarySlice'
 
 const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }) => {
   const dialogueRef = useRef(null);
   const [showSummary, setShowSummary] = useState(false);
+  const dispatch = useDispatch();
   
   const readingSteps = [
     {
@@ -60,6 +63,14 @@ const CardReading = ({ isOpen, onClose, onBackToWheel, emotionData, isLastCard }
   }, [isOpen]);
 
   const handleNextCard = () => {
+    console.log('handleNextCard called, isLastCard:', isLastCard);
+    
+    if (isLastCard) {
+      console.log('Processing last card...');
+      // Only open the summary, data should already be in Redux
+      dispatch(setSummaryOpen(true));
+      console.log('Summary opened');
+    }
     onClose();
   };
 
