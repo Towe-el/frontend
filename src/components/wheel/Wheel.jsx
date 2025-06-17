@@ -15,9 +15,10 @@ import {
   setCurrentSummaryReport,
   setCardClickMode,
 } from '../../store/slices/emotionSlice';
-import { setSummaryOpen, setSummaryData } from '../../store/slices/summarySlice';
+import { setSummaryData } from '../../store/slices/summarySlice';
+import { setShowSummary } from '../../store/slices/uiSlice';
 
-const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotions = [], accumulated_text = '' }, ref) => {
+const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotions = [], accumulated_text = '', summary }, ref) => {
   const dispatch = useDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,8 +38,6 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
     currentSummaryReport,
     cardClickMode,
   } = useSelector((state) => state.emotion);
-
-  const summaryState = useSelector((state) => state.summary);
 
   // Add debug logs for state changes
   useEffect(() => {
@@ -145,13 +144,20 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
       dispatch(setCurrentReadingIndex(nextIndex));
     } else {
       console.log('✅ Last card read. Opening summary.');
-      dispatch(setSummaryOpen(true));
+      dispatch(setShowSummary(true));
       setIsCardReadingOpen(false);
     }
+
+    dispatch(setSummaryData({
+      cards: selectedCards,
+      accumulatedText: accumulated_text,
+      summaryReport: summary,
+      isHistorical: false
+    }));
   };
 
   const handleCloseSummary = () => {
-    dispatch(setSummaryOpen(false));
+    dispatch(setShowSummary(false));
     dispatch(setCurrentReadingIndex(0));
     dispatch(setSelectedCards([]));
     dispatch(setCurrentSummaryReport(null));
@@ -251,13 +257,12 @@ const Wheel = forwardRef(({ showDialogue = false, highlightedCards = [], emotion
     // Reset other modal states
     setIsModalOpen(false);
     setIsCardReadingOpen(false);
-    dispatch(setSummaryOpen(false));
+    dispatch(setShowSummary(false));
   };
 
   return (
     <>
-      <style>{`
-        .card-glow {
+      <style>{`        .card-glow {
           filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
         }
         @keyframes pulse-glow {

@@ -47,6 +47,7 @@ export const emotionSlice = createSlice({
       state.currentReadingIndex = action.payload;
     },
     setCurrentSummaryReport: (state, action) => {
+      console.log('Setting currentSummaryReport in emotionSlice:', action.payload);
       state.currentSummaryReport = action.payload;
     },
     setCardClickMode: (state, action) => {

@@ -5,6 +5,7 @@ import Navbar from '../components/navbar/Navbar'
 import ProductIntroModal from '../components/product-intro/ProductIntroModal'
 import DialogueModal from '../components/dialogue/DialogueModal'
 import ReadyModal from '../components/dialogue/ReadyModal'
+import Footer from '../components/footer/Footer'
 import { simulatedEmotionData } from '../data/emotionData'
 import {
   setEmotions,
@@ -142,6 +143,8 @@ function Home() {
         onClose={handleCloseReady}
         onSearch={handleSearch}
       />
+
+      <Footer />
     </div>
   );
 }
