@@ -28,6 +28,7 @@ This is the frontend of the Emotional Wheel app. Users can input how they feel (
 ### UI Development
 - **React.js** – Built with a component-based architecture for reusability and scalability.
 - **TailwindCSS** – Used for utility-first styling, enabling rapid, responsive design.
+- **Redux Toolkit** – Utilized for centralized and predictable state management across the application. It manages emotion data, selected cards, reading flow, and summary report state. Modular slices (emotionSlice, summarySlice) enable separation of concerns and easier debugging.
 - **Framer Motion** – Powered lightweight & interactive UI transitions, and fine-tuned animations for each emotion, including path-drawing, transform effects, and reverse-order rendering.
 
 ### Voice Input
@@ -48,15 +49,16 @@ toweel-frontend/
 ├── public/
 ├── src/
 │ ├── assets/
-│ ├── components/ # Reusable UI components
-│ ├── emotion-svgs/ # SVG React components per emotion
-│ ├── animations/ # Animation logic and motion utils
-│ ├── pages/ # Page-level components
-│ ├── utils/ # Helpers (e.g., session, formatting)
-│ └── App.jsx # Root component
+│ ├── components/ #Reusable UI components
+│ ├── emotion-svgs/
+│ ├── animations/
+│ ├── pages/
+│ ├── store/ #Redux config
+│ ├── utils/
+│ └── App.jsx
 ├── .gitignore
 ├── tailwind.config.js
-├── firebase.json # Hosting config
+├── firebase.json
 └── package.json
 ```
 
@@ -94,6 +96,6 @@ npm run build
   
 
 ## 🙌 Acknowledgments
-- OpenAI Gemini 2.0 API for emotional analysis
-- Google Web Speech API
+- Gemini 2.0 API for emotional analysis
+- Web Speech API
 - Inspiration from real-world emotional journaling and therapy tools
