@@ -1,8 +1,8 @@
 # Toweel – Frontend
 
-Toweel is an intelligent emotion analysis search engine demo project developed for the AI in Action Hackathon. This project adopts a frontend-backend separation architecture, and this repository contains the backend API service.
+Toweel is an intelligent emotion analysis search engine demo project developed for the AI in Action Hackathon. Built with a frontend-backend separation architecture, this repository contains the complete frontend implementation.
 
-By combining Google Cloud Vertex AI's text embedding models with MongoDB vector database, Toweel can understand users' emotional expressions and return relevant emotional content, helping users better understand and express their emotional states.
+By combining React, TailwindCSS, and the Framer Motion animation library, Toweel offers a smooth, responsive, and emotionally expressive user interface designed to foster emotional awareness.
 
 ---
 
