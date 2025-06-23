@@ -21,13 +21,17 @@ const BackIcon = () => (
   </svg>
 )
 
-const ReadyModal = ({ onSearch }) => {
+const ReadyModal = ({ onSearch, onClose }) => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const showReadyModal = useSelector((state) => state.dialogue.showReadyModal);
 
   const handleClose = () => {
+    console.log('ReadyModal: Close button clicked');
     dispatch(setShowReadyModal(false));
+    if (onClose) {
+      onClose();
+    }
   };
 
   const handleSearch = async () => {
@@ -98,8 +102,10 @@ const ReadyModal = ({ onSearch }) => {
         dispatch(setCardClickMode('reading'));
         dispatch(setShowReadyModal(false));
         
-        // Force a page reload to ensure we're back at the Wheel page
-        window.location.href = '/';
+        // Close the dialogue modal as well
+        if (onClose) {
+          onClose();
+        }
       } else {
         console.warn('ReadyModal: No emotions data in result:', result);
       }
