@@ -12,6 +12,7 @@ import ReadyModal from './ReadyModal'
 import LogoImage2 from '../../assets/LogoImage2.png'
 import { structureSummaryReport, createReadingObject } from '../../utils/summaryReportUtils'
 import { analyzeEmotionData } from '../../services/emotionAnalysis'
+import { setShowDialogue } from '../../store/slices/uiSlice'
 import {
   setMessages,
   addMessage,
@@ -88,7 +89,7 @@ const DownloadIcon = () => (
   </svg>
 )
 
-const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) => {
+const DialogueModal = forwardRef(({ onClose, onEmotionsAnalyzed }, ref) => {
   const dispatch = useDispatch();
   const mediaRecorderRef = useRef(null);
   const [scope, animate] = useAnimate();
@@ -110,6 +111,8 @@ const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) 
     showReadyModal,
     sessionId,
   } = useSelector((state) => state.dialogue);
+
+  const isOpen = useSelector((state) => state.ui.showDialogue)
 
   // Reset processing state when modal opens
   useEffect(() => {
@@ -370,8 +373,13 @@ const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) 
 
   const handleClose = () => {
     console.log('DialogueModal: Close button clicked');
+    // Close ReadyModal first if it's open
+    if (showReadyModal) {
+      dispatch(setShowReadyModal(false));
+    }
     dispatch(resetDialogueState());
-    onClose();
+    dispatch(setShowDialogue(false))
+    if(onClose) onClose();
   };
 
   const handleEmotionAnalysis = async () => {
@@ -415,7 +423,7 @@ const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) 
         console.log('💾 Saved session to localStorage');
 
         // Close DialogueModal
-        onClose();
+        if (onClose) onClose();
       }
     } catch (error) {
       console.error('❌ Error during emotion analysis:', error);
@@ -455,6 +463,7 @@ const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) 
               <div className="flex justify-between items-center p-4">
                 <button
                   className="text-gray-500 hover:text-black text-5xl m-8"
+                  style={{ zIndex: 1100, position: 'relative' }}
                   onClick={handleClose}
                 >
                   ×
@@ -604,7 +613,12 @@ const DialogueModal = forwardRef(({ isOpen, onClose, onEmotionsAnalyzed }, ref) 
           </motion.div>
         )}
       </AnimatePresence>
-      <ReadyModal onSearch={handleEmotionAnalysis} onClose={onClose} />
+      {showReadyModal && (
+        <ReadyModal onSearch={handleEmotionAnalysis} onClose={() => {
+          dispatch(setShowReadyModal(false));
+          if (onClose) onClose();
+        }} />
+      )}
     </>
   );
 });

@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+/* 添加到全局 CSS 或 Tailwind config 的 layer 中 */
+.mask-border {
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 0.1px; /* 触发边框效果 */
+}

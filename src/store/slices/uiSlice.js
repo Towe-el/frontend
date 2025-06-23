@@ -4,6 +4,7 @@ const initialState = {
   showIntro: true,
   showDialogue: false,
   showReady: false,
+  showSummary: false,
 };
 
 export const uiSlice = createSlice({
@@ -19,10 +20,14 @@ export const uiSlice = createSlice({
     setShowReady: (state, action) => {
       state.showReady = action.payload;
     },
+    setShowSummary: (state, action) => {
+      state.showSummary = action.payload;
+    },
     closeAllModals: (state) => {
       state.showIntro = false;
       state.showDialogue = false;
       state.showReady = false;
+      state.showSummary = false;
     },
   },
 });
@@ -31,6 +36,7 @@ export const {
   setShowIntro,
   setShowDialogue,
   setShowReady,
+  setShowSummary,
   closeAllModals,
 } = uiSlice.actions;
 

@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import EmotionCard from '../components/emotion-card/EmotionCard';
 import Navbar from '../components/navbar/Navbar';
 import { useNavigate } from 'react-router-dom';
 import CardReading from '../components/cardReading/CardReading';
 import Summary from '../components/summary/Summary';
-import { setSummaryOpen, setSummaryData } from '../store/slices/summarySlice';
+import { setSummaryData } from '../store/slices/summarySlice';
+import { setShowSummary } from '../store/slices/uiSlice';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -92,9 +93,10 @@ const History = () => {
       dispatch(setSummaryData({
         cards: selectedReading.cards,
         accumulatedText: selectedReading.accumulated_text,
-        summaryReport: selectedReading.summaryReport
+        summaryReport: selectedReading.summaryReport,
+        isHistorical: true
       }));
-      dispatch(setSummaryOpen(true));
+      dispatch(setShowSummary(true));
     }
   };
 

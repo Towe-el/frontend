@@ -5,8 +5,9 @@ import { LoadingAnimation } from '../../animations/LoadingAnimation';
 import Navbar from '../navbar/Navbar';
 import LogoImage1 from '../../assets/LogoImage1.png';
 import { setShowReadyModal } from '../../store/slices/dialogueSlice';
-import { setSelectedCards, setCurrentSummaryReport } from '../../store/slices/emotionSlice';
-import { setSummaryOpen, setSummaryData } from '../../store/slices/summarySlice';
+import { setSelectedCards, setCurrentSummaryReport, setCardClickMode } from '../../store/slices/emotionSlice';
+import { setSummaryData } from '../../store/slices/summarySlice';
+import { setShowSummary } from '../../store/slices/uiSlice';
 import { simulatedEmotionData } from '../../data/emotionData';
 
 const BackIcon = () => (
@@ -20,13 +21,17 @@ const BackIcon = () => (
   </svg>
 )
 
-const ReadyModal = ({ onSearch }) => {
+const ReadyModal = ({ onSearch, onClose }) => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const showReadyModal = useSelector((state) => state.dialogue.showReadyModal);
 
   const handleClose = () => {
+    console.log('ReadyModal: Close button clicked');
     dispatch(setShowReadyModal(false));
+    if (onClose) {
+      onClose();
+    }
   };
 
   const handleSearch = async () => {
@@ -76,7 +81,7 @@ const ReadyModal = ({ onSearch }) => {
           };
           console.log('ReadyModal: Setting summary data to Redux:', summaryData);
           dispatch(setSummaryData(summaryData));
-          dispatch(setSummaryOpen(true));
+          dispatch(setShowSummary(true));
         } else {
           console.warn('ReadyModal: No summary_report found in result');
         }
@@ -93,8 +98,14 @@ const ReadyModal = ({ onSearch }) => {
         const prev = JSON.parse(localStorage.getItem('emotionReadings') || '[]');
         localStorage.setItem('emotionReadings', JSON.stringify([...prev, newReading]));
 
-        // Close the ready modal
+        // Set card click mode to reading and close the ready modal
+        dispatch(setCardClickMode('reading'));
         dispatch(setShowReadyModal(false));
+        
+        // Close the dialogue modal as well
+        if (onClose) {
+          onClose();
+        }
       } else {
         console.warn('ReadyModal: No emotions data in result:', result);
       }

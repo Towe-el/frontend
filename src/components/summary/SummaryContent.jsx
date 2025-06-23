@@ -1,6 +1,7 @@
 import { useSelector } from 'react-redux';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import EmotionSummaryDocument from '../../utils/pdfGenerator.jsx';
+import EmotionCard from '../emotion-card/EmotionCard';
 
 const SummaryContent = ({ onClose, showSharedContent = true }) => {
   const { accumulatedText, summaryReport, cards } = useSelector((state) => state.summary);
@@ -18,6 +19,15 @@ const SummaryContent = ({ onClose, showSharedContent = true }) => {
 
   return (
     <div className="pdf-content-container relative block bg-white z-[1] min-h-screen p-8">
+      {/* Emotion Cards */}
+      <div className="flex justify-center gap-20 mb-8">
+        {cards && cards.slice(0, 3).map((card) => (
+          <div key={card.emotion} className="flex flex-col items-center" style={{ width: '120px', height: 'auto' }}>
+            <EmotionCard emotion={card.emotion} definition={card.definition} isModal={true} />
+            <div className="text-lg text-center font-bold">{card.percentage ? `${Math.floor(card.percentage)}%` : ''}</div>
+          </div>
+        ))}
+      </div>
       <div className="grid grid-cols-[200px_1fr] gap-8">
         {/* Navigation Bar */}
         <div className="sticky top-8 h-fit">
@@ -80,15 +90,6 @@ const SummaryContent = ({ onClose, showSharedContent = true }) => {
                   </p>
                 ))
               )}
-            </div>
-
-            <div id="key-insights" className="bg-white/60 p-6 rounded-lg scroll-mt-8">
-              <h3 className="text-xl font-medium mb-4">Key Insights</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-2">
-                {summaryReport?.keyInsights?.map((insight, index) => (
-                  <li key={index}>{insight}</li>
-                ))}
-              </ul>
             </div>
 
             <div id="moving-forward" className="bg-white/60 p-6 rounded-lg scroll-mt-8">
