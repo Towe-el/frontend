@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { motion } from 'framer-motion'
 import Wheel from '../components/wheel/Wheel'
@@ -101,6 +101,10 @@ function Home() {
       await dialogueRef.current.handleEmotionAnalysis();
     }
   };
+
+  useEffect(() => {
+    dispatch(resetWheelState());
+  }, [dispatch]);
 
   console.log('Home: Current state', { 
     showIntro, 

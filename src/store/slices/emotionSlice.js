@@ -54,6 +54,7 @@ export const emotionSlice = createSlice({
       state.cardClickMode = action.payload;
     },
     resetWheelState: (state) => {
+      state.emotions = [];
       state.selectedEmotion = null;
       state.selectedCards = [];
       state.currentReadingIndex = 0;

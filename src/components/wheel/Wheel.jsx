@@ -13,6 +13,7 @@ import {
   setCurrentReadingIndex,
   setCurrentSummaryReport,
   setCardClickMode,
+  clearHighlightedCards,
 } from '../../store/slices/emotionSlice';
 import { setSummaryData } from '../../store/slices/summarySlice';
 import { setShowSummary } from '../../store/slices/uiSlice';
@@ -110,8 +111,7 @@ const Wheel = forwardRef(({ highlightedCards = [], emotions = [], accumulated_te
 
   // 关闭单张卡阅读
   const closeModal = () => {
-    dispatch(setSelectedEmotion(null));
-    setIsCardReadingOpen(false)
+    setIsModalOpen(false);
   };
 
   // 读下一张卡，或者进入总结
@@ -158,7 +158,8 @@ const Wheel = forwardRef(({ highlightedCards = [], emotions = [], accumulated_te
     dispatch(setSelectedCards([]));
     dispatch(setCurrentSummaryReport(null));
     dispatch(setCardClickMode('detail'));
-    dispatch(setSelectedEmotion(null))
+    dispatch(setSelectedEmotion(null));
+    dispatch(clearHighlightedCards());
     console.log('Set cardClickMode to detail (handleCloseSummary)');
   };
 
@@ -315,6 +316,7 @@ const Wheel = forwardRef(({ highlightedCards = [], emotions = [], accumulated_te
         onBackToWheel={() => {
           console.log('Wheel: Back to wheel clicked, current emotion:', selectedEmotion);
           setIsCardReadingOpen(false);
+          dispatch(clearHighlightedCards());
         }}
         emotionData={selectedEmotion}
         isLastCard={currentReadingIndex === selectedCards.length - 1}
